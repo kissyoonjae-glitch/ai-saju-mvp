@@ -31,8 +31,12 @@ with c3:
     day = st.selectbox("일", list(range(1, 32)), index=0)
 
 st.subheader("태어난 시각")
-time_options = ["모름"] + [f"{h:02d}:00" for h in range(24)]
-birth_time = st.selectbox("시간", time_options, index=13)
+time_options = ["모름"] + [
+    f"{h:02d}:{m:02d}"
+    for h in range(24)
+    for m in (0, 30)
+]
+birth_time = st.selectbox("시간", time_options, index=25)
 
 st.subheader("성별")
 gender = st.radio("성별 선택", ["남성", "여성"], horizontal=True, label_visibility="collapsed")
@@ -48,8 +52,10 @@ def calculate_saju():
 
     if birth_time != "모름":
         payload["birthHour"] = int(birth_time.split(":")[0])
+        payload["birthMinute"] = int(birth_time.split(":")[1])
     else:
         payload["birthHour"] = None
+        payload["birthMinute"] = None
 
     r = requests.post(
         "https://api.sazu.app/v1/sazu/calculate",
