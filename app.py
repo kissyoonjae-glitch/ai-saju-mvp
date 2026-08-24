@@ -237,77 +237,208 @@ API의 evaluation/종합평가 데이터가 있다면 다른 모듈과 교차해
             yield event.delta
 
 # ---------- UI ----------
-st.title("🔮 AI 정밀 사주")
-st.caption("무료 핵심 풀이를 먼저 확인하고, 원하면 전체 정밀 리포트를 볼 수 있습니다.")
 
-name = st.text_input("이름", placeholder="예: 홍길동")
+# ---------- UI ----------
+st.markdown("""
+<style>
+    .stApp {
+        background:
+            radial-gradient(circle at top, rgba(155,115,65,0.08), transparent 28%),
+            linear-gradient(180deg, #fbf8f2 0%, #f4efe6 100%);
+        color: #2f2a25;
+    }
+    .block-container {
+        max-width: 760px;
+        padding-top: 2.2rem;
+        padding-bottom: 4rem;
+    }
+    .saju-card {
+        background: rgba(255,255,255,0.72);
+        border: 1px solid rgba(103,78,48,0.16);
+        border-radius: 24px;
+        padding: 28px 28px 22px 28px;
+        box-shadow: 0 12px 35px rgba(80,55,30,0.08);
+        backdrop-filter: blur(8px);
+        margin-bottom: 22px;
+    }
+    .hero-title {
+        text-align:center;
+        font-size: 2.2rem;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        color:#342b24;
+        margin-top: 0.3rem;
+        margin-bottom: .4rem;
+    }
+    .hero-sub {
+        text-align:center;
+        color:#7a6d60;
+        font-size: .98rem;
+        margin-bottom: 1.8rem;
+    }
+    .seal {
+        width:74px;height:74px;
+        margin:0 auto 10px auto;
+        border-radius:50%;
+        display:flex;align-items:center;justify-content:center;
+        border:1px solid rgba(117,82,44,.28);
+        background:linear-gradient(145deg,#efe1cc,#f9f3e9);
+        font-size:34px;
+        box-shadow: inset 0 0 0 5px rgba(255,255,255,.45);
+    }
+    .section-kicker {
+        color:#9a784d;
+        font-size:.78rem;
+        letter-spacing:.14em;
+        font-weight:700;
+        text-transform:uppercase;
+        margin-bottom:.35rem;
+    }
+    .result-title {
+        font-size:1.7rem;
+        font-weight:800;
+        color:#2f2924;
+        margin-bottom:.4rem;
+    }
+    .keyword-wrap { text-align:center; margin: 12px 0 16px 0; }
+    .keyword {
+        display:inline-block;
+        padding:7px 12px;
+        margin:4px;
+        border-radius:999px;
+        background:#efe6d9;
+        border:1px solid #ddcbb6;
+        color:#5e4b38;
+        font-size:.9rem;
+        font-weight:700;
+    }
+    .locked-box {
+        background:#f7f1e8;
+        border:1px solid #e3d4c2;
+        border-radius:16px;
+        padding:15px 16px;
+        margin:9px 0;
+    }
+    .price-box {
+        background:linear-gradient(135deg,#332a24 0%,#514235 100%);
+        color:white;
+        border-radius:20px;
+        padding:24px;
+        margin-top:20px;
+        text-align:center;
+    }
+    .price-box h3 { color:white !important; margin:0 0 6px 0; }
+    .price-box p { color:#e9ded1 !important; margin:0; }
+    .stButton > button {
+        border-radius: 14px !important;
+        min-height: 48px;
+        font-weight: 700;
+    }
+    div[data-baseweb="select"] > div, .stTextInput input {
+        border-radius: 12px !important;
+    }
+    #MainMenu {visibility:hidden;}
+    footer {visibility:hidden;}
+    header {visibility:hidden;}
+</style>
+""", unsafe_allow_html=True)
 
-st.subheader("생년월일")
-c1, c2, c3 = st.columns(3)
-with c1:
-    year = st.selectbox("연도", list(range(2026, 1939, -1)), index=36)
-with c2:
-    month = st.selectbox("월", list(range(1, 13)))
-with c3:
-    day = st.selectbox("일", list(range(1, 32)))
+if "page" not in st.session_state:
+    st.session_state["page"] = "input"
 
-st.subheader("태어난 시각")
-time_options = ["모름"] + [
-    f"{h:02d}:{m:02d}"
-    for h in range(24)
-    for m in range(0, 60, 10)
-]
-birth_time = st.selectbox("시간", time_options, index=73)
-
-st.subheader("성별")
-gender = st.radio(
-    "성별 선택",
-    ["남성", "여성"],
-    horizontal=True,
-    label_visibility="collapsed"
-)
-
-st.divider()
-
-if st.button("✨ 무료로 내 사주 보기", type="primary", use_container_width=True):
-    if not name.strip():
-        st.warning("이름을 입력해주세요.")
-        st.stop()
-    if not SAZU_API_KEY:
-        st.error("SAZU API 키가 설정되지 않았습니다.")
-        st.stop()
-    if not OPENAI_API_KEY:
-        st.error("OpenAI API 키가 설정되지 않았습니다.")
-        st.stop()
-
+def go_input():
+    st.session_state["page"] = "input"
+    st.session_state.pop("preview", None)
+    st.session_state.pop("saju_data", None)
     st.session_state.pop("premium_report", None)
     st.session_state.pop("show_full_report", None)
 
-    try:
-        with st.spinner("사주 데이터를 계산하고 있어요..."):
-            data = calculate_saju(year, month, day, birth_time, gender)
+# ---------- PAGE 1 : INPUT ----------
+if st.session_state["page"] == "input":
+    st.markdown('<div class="seal">☯</div>', unsafe_allow_html=True)
+    st.markdown('<div class="hero-title">AI 정밀 사주</div>', unsafe_allow_html=True)
+    st.markdown('<div class="hero-sub">전통 명리 데이터를 바탕으로, 당신의 사주를 현대적인 언어로 풀어드립니다.</div>', unsafe_allow_html=True)
 
-        st.session_state["saju_data"] = data
-        st.session_state["saju_name"] = name
-        st.session_state["saju_gender"] = gender
+    st.markdown('<div class="saju-card">', unsafe_allow_html=True)
+    st.markdown('<div class="section-kicker">BIRTH DATA</div>', unsafe_allow_html=True)
 
-        with st.spinner("핵심 풀이를 만들고 있어요..."):
-            preview = generate_preview(name, gender, data)
+    name = st.text_input("이름", placeholder="예: 홍길동")
 
-        st.session_state["preview"] = preview
+    st.subheader("생년월일")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        year = st.selectbox("연도", list(range(2026, 1939, -1)), index=36)
+    with c2:
+        month = st.selectbox("월", list(range(1, 13)))
+    with c3:
+        day = st.selectbox("일", list(range(1, 32)))
 
-    except Exception as e:
-        st.error(f"오류가 발생했습니다: {e}")
+    st.subheader("태어난 시각")
+    time_options = ["모름"] + [
+        f"{h:02d}:{m:02d}"
+        for h in range(24)
+        for m in range(0, 60, 10)
+    ]
+    birth_time = st.selectbox("시간", time_options, index=73)
 
-if "preview" in st.session_state:
-    preview = st.session_state["preview"]
+    st.subheader("성별")
+    gender = st.radio(
+        "성별 선택",
+        ["남성", "여성"],
+        horizontal=True,
+        label_visibility="collapsed"
+    )
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    st.success("무료 핵심 풀이가 완성되었습니다.")
-    st.markdown("## 한눈에 보는 당신의 사주")
+    if st.button("✨ 내 사주 보기", type="primary", use_container_width=True):
+        if not name.strip():
+            st.warning("이름을 입력해주세요.")
+            st.stop()
+        if not SAZU_API_KEY:
+            st.error("SAZU API 키가 설정되지 않았습니다.")
+            st.stop()
+        if not OPENAI_API_KEY:
+            st.error("OpenAI API 키가 설정되지 않았습니다.")
+            st.stop()
+
+        try:
+            with st.spinner("사주 원국과 명리 데이터를 계산하고 있어요..."):
+                data = calculate_saju(year, month, day, birth_time, gender)
+
+            with st.spinner("핵심 풀이를 정리하고 있어요..."):
+                preview = generate_preview(name, gender, data)
+
+            st.session_state["saju_data"] = data
+            st.session_state["saju_name"] = name
+            st.session_state["saju_gender"] = gender
+            st.session_state["preview"] = preview
+            st.session_state["page"] = "result"
+            st.rerun()
+
+        except Exception as e:
+            st.error(f"오류가 발생했습니다: {e}")
+
+    st.caption("전통 명리학 기반 자기성찰·엔터테인먼트 콘텐츠")
+
+# ---------- PAGE 2 : RESULT ----------
+elif st.session_state["page"] == "result":
+    preview = st.session_state.get("preview", {})
+    name = st.session_state.get("saju_name", "사용자")
+
+    top1, top2 = st.columns([1, 4])
+    with top1:
+        if st.button("← 다시 입력"):
+            go_input()
+            st.rerun()
+    with top2:
+        st.markdown(f'<div class="section-kicker">SAJU READING</div><div class="result-title">{name}님의 사주 풀이</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="saju-card">', unsafe_allow_html=True)
 
     keywords = preview.get("keywords", [])
     if keywords:
-        st.markdown(" · ".join([f"**{k}**" for k in keywords]))
+        kw_html = "".join([f'<span class="keyword">{k}</span>' for k in keywords])
+        st.markdown(f'<div class="keyword-wrap">{kw_html}</div>', unsafe_allow_html=True)
 
     if preview.get("headline"):
         st.markdown(f"### {preview['headline']}")
@@ -321,16 +452,18 @@ if "preview" in st.session_state:
         st.markdown(f"**{character_name}**")
         if character_teaser:
             st.write(character_teaser)
-        st.caption("🔒 정밀 사주에서는 이 캐릭터가 나온 명리 근거와 이해를 돕는 현대적 인물 비유를 확인할 수 있습니다.")
+        st.caption("정밀 사주에서는 이 캐릭터가 나온 명리 근거와 현대적 인물 비유까지 확인할 수 있습니다.")
 
     if preview.get("hook"):
         st.info(preview["hook"])
 
-    st.divider()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="section-kicker">PREMIUM READING</div>', unsafe_allow_html=True)
     st.markdown("## 🔒 전체 정밀 사주에서 확인할 수 있습니다")
 
     sections = {
-        "나의 사주 캐릭터": "캐릭터 유형 · 그렇게 해석한 명리 근거 · 이해를 돕는 현대적 인물 비유",
+        "나의 사주 캐릭터": "캐릭터 유형 · 명리 근거 · 현대적 인물 비유",
         "나라는 사람": "타고난 기질 · 내면과 외면 · 강점 · 약점 · 스트레스 패턴",
         "직업과 일": "조직생활 · 독립형 일 · 리더십 · 적합한 업무환경 · 돈으로 연결되는 강점",
         "사업 성향": "창업 성향 · 독립성 · 동업 · 리더십 · 사업에서 조심할 점",
@@ -342,16 +475,23 @@ if "preview" in st.session_state:
     }
 
     for title, desc in sections.items():
-        st.markdown(f"🔒 **{title}**")
-        st.caption(desc)
+        st.markdown(
+            f'<div class="locked-box">🔒 <b>{title}</b><br><span style="color:#7c6e61;font-size:.9rem">{desc}</span></div>',
+            unsafe_allow_html=True
+        )
 
-    st.markdown("---")
-    st.markdown("### AI 정밀 사주 전체 풀이 · 4,900원")
-    st.caption("실제 명리 데이터의 근거부터 나의 사주 캐릭터, 직업·사업·재물·관계·대운과 종합 방향까지 상세하게 풀이합니다.")
+    st.markdown(
+        """
+        <div class="price-box">
+            <h3>AI 정밀 사주 전체 풀이 · 4,900원</h3>
+            <p>실제 명리 데이터의 근거부터 직업·사업·재물·관계·대운과 종합 방향까지 상세하게 풀이합니다.</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     if PAYMENT_URL:
         st.link_button("💳 전체 정밀 사주 구매하기", PAYMENT_URL, use_container_width=True)
-        st.caption("※ 결제 완료 후 자동 잠금 해제 기능은 결제 연동 단계에서 연결합니다.")
     else:
         st.button("💳 전체 정밀 사주 구매하기", use_container_width=True, disabled=True)
         st.caption("결제 링크 연결 전 테스트 버전입니다.")
@@ -383,5 +523,4 @@ if "preview" in st.session_state:
             else:
                 st.markdown(st.session_state["premium_report"])
 
-st.divider()
-st.caption("전통 명리학 기반 자기성찰·엔터테인먼트 콘텐츠")
+    st.caption("전통 명리학 기반 자기성찰·엔터테인먼트 콘텐츠")
