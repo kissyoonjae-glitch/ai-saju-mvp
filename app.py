@@ -241,102 +241,219 @@ API의 evaluation/종합평가 데이터가 있다면 다른 모듈과 교차해
 # ---------- UI ----------
 st.markdown("""
 <style>
+    :root {
+        --ink:#efe6d8;
+        --muted:#b9aa96;
+        --gold:#c6a15b;
+        --gold2:#8e6d37;
+        --panel:#201d1a;
+        --panel2:#29241f;
+        --line:#4a4035;
+        --deep:#12110f;
+    }
+
+    html, body, [class*="css"], .stApp {
+        color: var(--ink) !important;
+    }
+
     .stApp {
         background:
-            radial-gradient(circle at top, rgba(155,115,65,0.08), transparent 28%),
-            linear-gradient(180deg, #fbf8f2 0%, #f4efe6 100%);
-        color: #2f2a25;
+            radial-gradient(circle at 50% -10%, rgba(170,128,65,.16), transparent 28%),
+            radial-gradient(circle at 90% 20%, rgba(111,78,42,.08), transparent 25%),
+            linear-gradient(180deg, #171512 0%, #100f0d 100%);
     }
+
     .block-container {
-        max-width: 760px;
-        padding-top: 2.2rem;
-        padding-bottom: 4rem;
+        max-width: 790px;
+        padding-top: 2.6rem;
+        padding-bottom: 5rem;
     }
+
+    /* Streamlit text: explicitly dark-theme readable */
+    .stMarkdown, .stMarkdown p, .stMarkdown li, .stMarkdown span,
+    .stText, label, .stRadio label, .stSelectbox label,
+    [data-testid="stWidgetLabel"], [data-testid="stCaptionContainer"] {
+        color: var(--ink) !important;
+    }
+
+    h1,h2,h3,h4 {
+        color:#f3eadc !important;
+        letter-spacing:-.025em;
+    }
+
     .saju-card {
-        background: rgba(255,255,255,0.72);
-        border: 1px solid rgba(103,78,48,0.16);
-        border-radius: 24px;
-        padding: 28px 28px 22px 28px;
-        box-shadow: 0 12px 35px rgba(80,55,30,0.08);
-        backdrop-filter: blur(8px);
-        margin-bottom: 22px;
+        background: linear-gradient(145deg, rgba(38,34,30,.98), rgba(27,25,22,.98));
+        border: 1px solid var(--line);
+        border-top: 1px solid rgba(198,161,91,.55);
+        border-radius: 18px;
+        padding: 30px 30px 24px 30px;
+        box-shadow: 0 22px 55px rgba(0,0,0,.30);
+        margin-bottom: 24px;
     }
+
     .hero-title {
         text-align:center;
-        font-size: 2.2rem;
-        font-weight: 800;
-        letter-spacing: -0.04em;
-        color:#342b24;
-        margin-top: 0.3rem;
-        margin-bottom: .4rem;
+        font-size:2.25rem;
+        font-weight:800;
+        letter-spacing:-.045em;
+        color:#f3eadc;
+        margin:.35rem 0 .45rem 0;
     }
+
     .hero-sub {
         text-align:center;
-        color:#7a6d60;
-        font-size: .98rem;
-        margin-bottom: 1.8rem;
+        color:var(--muted);
+        font-size:.96rem;
+        line-height:1.7;
+        margin-bottom:2rem;
     }
+
     .seal {
-        width:74px;height:74px;
-        margin:0 auto 10px auto;
+        width:78px;
+        height:78px;
+        margin:0 auto 12px auto;
         border-radius:50%;
-        display:flex;align-items:center;justify-content:center;
-        border:1px solid rgba(117,82,44,.28);
-        background:linear-gradient(145deg,#efe1cc,#f9f3e9);
-        font-size:34px;
-        box-shadow: inset 0 0 0 5px rgba(255,255,255,.45);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        color:#ead8b6;
+        border:1px solid var(--gold2);
+        background:
+            radial-gradient(circle, #342b21 0%, #201c18 68%);
+        font-size:35px;
+        box-shadow:
+            inset 0 0 0 5px #171411,
+            inset 0 0 0 6px rgba(198,161,91,.25),
+            0 10px 28px rgba(0,0,0,.30);
     }
+
     .section-kicker {
-        color:#9a784d;
-        font-size:.78rem;
-        letter-spacing:.14em;
-        font-weight:700;
-        text-transform:uppercase;
-        margin-bottom:.35rem;
-    }
-    .result-title {
-        font-size:1.7rem;
+        color:var(--gold);
+        font-size:.76rem;
+        letter-spacing:.18em;
         font-weight:800;
-        color:#2f2924;
-        margin-bottom:.4rem;
+        margin-bottom:.45rem;
     }
-    .keyword-wrap { text-align:center; margin: 12px 0 16px 0; }
+
+    .result-title {
+        font-size:1.75rem;
+        font-weight:800;
+        color:#f3eadc;
+        margin-bottom:.55rem;
+    }
+
+    .keyword-wrap {
+        text-align:center;
+        margin:12px 0 20px 0;
+    }
+
     .keyword {
         display:inline-block;
-        padding:7px 12px;
+        padding:7px 13px;
         margin:4px;
         border-radius:999px;
-        background:#efe6d9;
-        border:1px solid #ddcbb6;
-        color:#5e4b38;
-        font-size:.9rem;
+        background:#31291f;
+        border:1px solid #665236;
+        color:#e8d4ad !important;
+        font-size:.88rem;
         font-weight:700;
     }
+
     .locked-box {
-        background:#f7f1e8;
-        border:1px solid #e3d4c2;
-        border-radius:16px;
-        padding:15px 16px;
-        margin:9px 0;
+        background:linear-gradient(135deg,#24211d,#1c1a17);
+        border:1px solid #443b31;
+        border-left:3px solid #8e6d37;
+        border-radius:12px;
+        padding:16px 17px;
+        margin:10px 0;
+        color:#eee4d5 !important;
+        box-shadow:0 8px 22px rgba(0,0,0,.12);
     }
+
+    .locked-box b {
+        color:#f1e6d5 !important;
+    }
+
     .price-box {
-        background:linear-gradient(135deg,#332a24 0%,#514235 100%);
-        color:white;
-        border-radius:20px;
-        padding:24px;
-        margin-top:20px;
+        background:
+            radial-gradient(circle at top right, rgba(198,161,91,.14), transparent 35%),
+            linear-gradient(135deg,#28221c 0%,#171512 100%);
+        border:1px solid #725936;
+        color:#f4eadb !important;
+        border-radius:16px;
+        padding:26px 24px;
+        margin:24px 0 12px 0;
         text-align:center;
+        box-shadow:0 18px 45px rgba(0,0,0,.25);
     }
-    .price-box h3 { color:white !important; margin:0 0 6px 0; }
-    .price-box p { color:#e9ded1 !important; margin:0; }
+
+    .price-box h3 {
+        color:#f5ead8 !important;
+        margin:0 0 8px 0;
+    }
+
+    .price-box p {
+        color:#c8b8a2 !important;
+        margin:0;
+        line-height:1.65;
+    }
+
+    /* Inputs */
+    div[data-baseweb="select"] > div,
+    .stTextInput input {
+        background:#24211d !important;
+        color:#f2e9dc !important;
+        border:1px solid #514638 !important;
+        border-radius:10px !important;
+    }
+
+    .stTextInput input::placeholder {
+        color:#8f8375 !important;
+    }
+
+    div[data-baseweb="select"] span {
+        color:#f2e9dc !important;
+    }
+
+    /* Dropdown menu */
+    div[role="listbox"], ul[role="listbox"] {
+        background:#24211d !important;
+    }
+    div[role="option"] {
+        color:#f2e9dc !important;
+        background:#24211d !important;
+    }
+
+    /* Primary action */
+    .stButton > button[kind="primary"] {
+        background:linear-gradient(135deg,#9b763f,#6f512d) !important;
+        color:#fff8ec !important;
+        border:1px solid #b68e50 !important;
+        box-shadow:0 9px 25px rgba(0,0,0,.25);
+    }
+
     .stButton > button {
-        border-radius: 14px !important;
-        min-height: 48px;
-        font-weight: 700;
+        border-radius:10px !important;
+        min-height:49px;
+        font-weight:750;
     }
-    div[data-baseweb="select"] > div, .stTextInput input {
-        border-radius: 12px !important;
+
+    .stButton > button:not([kind="primary"]) {
+        background:#24211d;
+        color:#eadfce;
+        border:1px solid #4d4236;
     }
+
+    .stAlert {
+        background:#29241f !important;
+        color:#eee4d5 !important;
+        border-color:#574a3a !important;
+    }
+
+    hr {
+        border-color:#39332c !important;
+    }
+
     #MainMenu {visibility:hidden;}
     footer {visibility:hidden;}
     header {visibility:hidden;}
@@ -357,7 +474,7 @@ def go_input():
 if st.session_state["page"] == "input":
     st.markdown('<div class="seal">☯</div>', unsafe_allow_html=True)
     st.markdown('<div class="hero-title">AI 정밀 사주</div>', unsafe_allow_html=True)
-    st.markdown('<div class="hero-sub">전통 명리 데이터를 바탕으로, 당신의 사주를 현대적인 언어로 풀어드립니다.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="hero-sub">전통 명리의 구조를 바탕으로, 당신의 기질과 흐름을 깊이 있게 풀어드립니다.</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="saju-card">', unsafe_allow_html=True)
     st.markdown('<div class="section-kicker">BIRTH DATA</div>', unsafe_allow_html=True)
@@ -476,7 +593,7 @@ elif st.session_state["page"] == "result":
 
     for title, desc in sections.items():
         st.markdown(
-            f'<div class="locked-box">🔒 <b>{title}</b><br><span style="color:#7c6e61;font-size:.9rem">{desc}</span></div>',
+            f'<div class="locked-box">🔒 <b>{title}</b><br><span style="color:#b9aa96;font-size:.9rem">{desc}</span></div>',
             unsafe_allow_html=True
         )
 
