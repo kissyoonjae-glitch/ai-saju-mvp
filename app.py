@@ -54,7 +54,7 @@ def calculate_saju(year, month, day, birth_time, gender):
         raise RuntimeError(result.get("error", {}).get("message", "사주 계산 오류"))
     return result["data"]
 
-def generate_preview(name, gender, saju_data):
+def generate_preview(name, gender, saju_data, time_unknown=False):
     client = OpenAI(api_key=OPENAI_API_KEY)
     prompt = f"""
 너는 전통 명리학 데이터를 바탕으로 무료 맛보기 사주를 작성한다.
@@ -66,6 +66,8 @@ def generate_preview(name, gender, saju_data):
 {json.dumps(saju_data, ensure_ascii=False, indent=2)}
 
 원칙:
+- 출생시각 미상 여부: {time_unknown}
+- 출생시각 미상(True)이면 시주를 전제로 한 해석을 하지 않는다.
 - 무료 맛보기는 짧지만 구체적이어야 한다.
 - 누구에게나 맞는 말만 하지 않는다.
 - 가능한 경우 '사주 데이터 근거 → 해석 → 현실에서 나타날 수 있는 모습' 순서로 쓴다.
@@ -92,7 +94,7 @@ def generate_preview(name, gender, saju_data):
     response = client.responses.create(model="gpt-5-mini", input=prompt)
     return json.loads(clean_json_text(response.output_text))
 
-def stream_premium_report(name, gender, saju_data):
+def stream_premium_report(name, gender, saju_data, time_unknown=False):
     client = OpenAI(api_key=OPENAI_API_KEY)
 
     prompt = f"""
@@ -105,6 +107,10 @@ def stream_premium_report(name, gender, saju_data):
 {json.dumps(saju_data, ensure_ascii=False, indent=2)}
 
 [절대 원칙]
+0. 출생시각 미상 여부: {time_unknown}
+   - 출생시각 미상(True)이면 시주를 전제로 한 해석을 절대 하지 않는다.
+   - 시주, 시주 기반 십성, 말년운, 자녀운 등 출생시각 의존 해석은 "출생시각 미상으로 제외"라고 처리한다.
+   - 다른 연·월·일주 기반 해석은 가능한 범위에서 계속한다.
 1. 제공된 데이터에 없는 명리 정보는 만들지 않는다.
 2. JSON/API 내부 필드명은 독자에게 절대 노출하지 않는다.
    예: sinStrength, twelveFortune, negativeSpirits, summary.conflict, harmony, elements 같은 개발자용 표현을 본문에 쓰지 않는다.
@@ -510,12 +516,23 @@ if st.session_state["page"] == "input":
         day = st.selectbox("일", list(range(1, 32)))
 
     st.subheader("태어난 시각")
-    time_options = ["모름"] + [
+    time_unknown = st.checkbox("태어난 시각을 모릅니다", value=False)
+
+    time_options = [
         f"{h:02d}:{m:02d}"
         for h in range(24)
         for m in range(0, 60, 10)
     ]
-    birth_time = st.selectbox("시간", time_options, index=73)
+
+    birth_time = st.selectbox(
+        "시간",
+        time_options,
+        index=72,
+        disabled=time_unknown
+    )
+
+    if time_unknown:
+        st.caption("출생시각이 없으면 시주를 제외한 정보로 풀이합니다.")
 
     st.subheader("성별")
     gender = st.radio(
@@ -539,14 +556,15 @@ if st.session_state["page"] == "input":
 
         try:
             with st.spinner("사주 원국과 명리 데이터를 계산하고 있어요..."):
-                data = calculate_saju(year, month, day, birth_time, gender)
+                data = calculate_saju(year, month, day, "모름" if time_unknown else birth_time, gender)
 
             with st.spinner("핵심 풀이를 정리하고 있어요..."):
-                preview = generate_preview(name, gender, data)
+                preview = generate_preview(name, gender, data, time_unknown)
 
             st.session_state["saju_data"] = data
             st.session_state["saju_name"] = name
             st.session_state["saju_gender"] = gender
+            st.session_state["time_unknown"] = time_unknown
             st.session_state["preview"] = preview
             st.session_state["page"] = "result"
             st.rerun()
@@ -560,6 +578,7 @@ if st.session_state["page"] == "input":
 elif st.session_state["page"] == "result":
     preview = st.session_state.get("preview", {})
     name = st.session_state.get("saju_name", "사용자")
+    time_unknown = st.session_state.get("time_unknown", False)
 
     top1, top2 = st.columns([1, 4])
     with top1:
@@ -570,6 +589,9 @@ elif st.session_state["page"] == "result":
         st.markdown(f'<div class="section-kicker">SAJU READING</div><div class="result-title">{name}님의 사주 풀이</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="saju-card">', unsafe_allow_html=True)
+
+    if time_unknown:
+        st.info("출생시각 미상으로 시주 기반 해석은 제외하고 풀이합니다.")
 
     keywords = preview.get("keywords", [])
     if keywords:
@@ -649,6 +671,7 @@ elif st.session_state["page"] == "result":
                         st.session_state["saju_name"],
                         st.session_state["saju_gender"],
                         st.session_state["saju_data"],
+                        st.session_state.get("time_unknown", False),
                     ):
                         full_text += chunk
                         placeholder.markdown(full_text + "▌")
