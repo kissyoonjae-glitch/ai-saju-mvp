@@ -37,9 +37,8 @@ def calculate_saju(year, month, day, birth_time, gender):
         hh, mm = birth_time.split(":")
         payload["birthHour"] = int(hh)
         payload["birthMinute"] = int(mm)
-    else:
-        payload["birthHour"] = None
-        payload["birthMinute"] = None
+    # 출생시각을 모르면 birthHour / birthMinute 필드를 아예 보내지 않습니다.
+    # 일부 API는 null 값을 허용하지 않아 오류가 날 수 있습니다.
 
     r = requests.post(
         "https://api.sazu.app/v1/sazu/calculate",
