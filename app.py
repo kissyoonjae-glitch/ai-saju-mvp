@@ -6,9 +6,8 @@ import requests
 import streamlit as st
 from openai import OpenAI
 
-st.set_page_config(page_title="AI 사주", page_icon="🔮", layout="centered")
+st.set_page_config(page_title="AI 정밀 사주", page_icon="🔮", layout="centered")
 
-# ---------- Helpers ----------
 def get_secret(name, default=""):
     try:
         return st.secrets.get(name, default)
@@ -34,7 +33,6 @@ def calculate_saju(year, month, day, birth_time, gender):
         "isFemale": gender == "여성",
         "isLunar": False,
     }
-
     if birth_time != "모름":
         hh, mm = birth_time.split(":")
         payload["birthHour"] = int(hh)
@@ -54,125 +52,160 @@ def calculate_saju(year, month, day, birth_time, gender):
 
     if not result.get("success"):
         raise RuntimeError(result.get("error", {}).get("message", "사주 계산 오류"))
-
     return result["data"]
 
-def generate_preview(name, gender, focus, saju_data):
-    """
-    무료 맛보기만 짧게 생성.
-    상세 리포트는 절대 여기서 만들지 않음.
-    """
+def generate_preview(name, gender, saju_data):
     client = OpenAI(api_key=OPENAI_API_KEY)
-
     prompt = f"""
-너는 전통 명리학 데이터를 바탕으로 '무료 맛보기 사주'를 작성한다.
+너는 전통 명리학 데이터를 바탕으로 무료 맛보기 사주를 작성한다.
 
 사용자 이름: {name}
 성별: {gender}
-가장 궁금한 분야: {focus}
 
-아래 데이터는 외부 만세력 API가 계산한 결과다.
-없는 정보를 지어내지 말고 제공된 데이터에 근거해서만 해석하라.
-
-사주 데이터:
+아래 데이터만 근거로 해석한다.
 {json.dumps(saju_data, ensure_ascii=False, indent=2)}
 
-중요 원칙:
-- 아주 짧고 핵심적으로 작성한다.
+원칙:
+- 무료 맛보기는 짧지만 구체적이어야 한다.
+- 누구에게나 맞는 말만 하지 않는다.
+- 가능한 경우 '사주 데이터 근거 → 해석 → 현실에서 나타날 수 있는 모습' 순서로 쓴다.
 - 미래를 확정적으로 예언하지 않는다.
 - 공포를 조장하지 않는다.
-- 누구에게나 맞는 모호한 말만 하지 말고, 가능한 한 사주 데이터에 기반한 특징을 말한다.
-- 사용자가 선택한 관심 분야를 살짝 건드리되 상세 답은 남겨둔다.
-- 출력은 반드시 JSON만 반환한다.
+- JSON만 출력한다.
 
 형식:
 {{
-  "keywords": ["키워드1", "키워드2", "키워드3"],
-  "headline": "이 사람의 사주를 한 문장으로 요약",
-  "core": "핵심 성향을 2개의 짧은 문단으로 설명",
-  "hook": "상세 리포트에서 더 알고 싶게 만드는 구체적인 한 문장"
+  "keywords": ["핵심키워드1", "핵심키워드2", "핵심키워드3"],
+  "headline": "이 사람의 사주를 한 문장으로 표현",
+  "core": "핵심 성향 2개 문단",
+  "hook": "상세 리포트에서 확인할 수 있는 핵심 포인트를 궁금하게 만드는 한 문장"
 }}
 """
-    response = client.responses.create(
-        model="gpt-5-mini",
-        input=prompt,
-    )
+    response = client.responses.create(model="gpt-5-mini", input=prompt)
     return json.loads(clean_json_text(response.output_text))
 
-def stream_premium_report(name, gender, focus, saju_data):
-    """
-    상세 사주는 결제 후에만 생성.
-    생성되는 내용을 스트리밍으로 바로 보여줌.
-    """
+def stream_premium_report(name, gender, saju_data):
     client = OpenAI(api_key=OPENAI_API_KEY)
 
     prompt = f"""
-너는 전통 명리학 데이터를 바탕으로 유료 상세 사주 리포트를 작성한다.
+너는 유료 사주 리포트를 작성하는 전문 명리 해석가다.
+아래 데이터는 SAZU 만세력 API가 계산한 실제 명리 데이터다.
 
-사용자 이름: {name}
+이름: {name}
 성별: {gender}
-가장 궁금한 분야: {focus}
-
-아래 데이터는 외부 만세력 API가 계산한 결과다.
-없는 명리정보를 만들어내지 말고 제공된 데이터에 근거해서만 해석하라.
 
 사주 데이터:
 {json.dumps(saju_data, ensure_ascii=False, indent=2)}
 
-작성 원칙:
-- 무료 사주보다 훨씬 구체적이고 깊이 있게 작성한다.
-- 각 항목에서 가능하면 '사주 데이터의 근거 → 해석 → 현실에서 나타날 수 있는 모습' 순서로 쓴다.
-- 전문용어는 쉬운 말로 즉시 풀어쓴다.
-- 같은 내용을 반복해서 분량만 늘리지 않는다.
-- 사용자가 고른 관심 분야는 다른 항목보다 더 자세히 다룬다.
+반드시 지킬 원칙:
+- 제공되지 않은 명리 정보는 절대 만들어내지 않는다.
+- 사주 데이터의 실제 항목을 근거로 쓴다.
+- 가능한 경우 매 섹션에서 '근거 → 해석 → 현실에서의 모습' 순서로 설명한다.
+- 같은 말을 반복해 분량만 늘리지 않는다.
+- 전문용어는 쉬운 말로 바로 풀어쓴다.
 - 미래를 확정적으로 예언하지 않는다.
-- 의료·법률·재정 등의 중요한 결정을 사주만으로 권하지 않는다.
-- 대운/세운 데이터가 없으면 구체적인 시기 운세를 지어내지 않는다.
+- 의료·법률·재정 결정을 사주만으로 권하지 않는다.
+- 대운/세운 데이터가 실제로 있을 때만 시기 해석을 한다.
+- 격국, 용신, 신강/신약, 합형충파해, 신살, 허자, 원국 상호작용, 종합평가가 데이터에 있으면 반드시 활용한다.
+- 데이터에 없는 항목은 "제공된 데이터에서는 확인되지 않아 생략합니다"라고 쓴다.
+- 문체는 자연스럽고 구체적인 한국어.
+- 각 주요 섹션은 충분한 분량으로, 일반 무료 사주보다 확실히 깊게 작성한다.
 
-마크다운으로 작성:
+다음 구성으로 작성하라.
 
-# {name}님의 상세 사주 리포트
+# {name}님의 AI 정밀 사주 리포트
 
 ## 1. 사주 핵심 구조
-핵심 구조와 전체적인 기질 설명
+- 연주·월주·일주·시주
+- 일간
+- 오행 분포
+- 십성
+- 12운성
+이 데이터들이 실제로 제공된 경우 핵심 구조를 쉬운 말로 설명.
 
-## 2. 기본 성향과 기질
-사고방식, 행동방식, 감정 표현, 에너지 사용 방식
+## 2. 나라는 사람
+### 타고난 성격과 기질
+### 겉으로 보이는 모습과 내면
+### 강점과 재능
+### 반복되는 약점과 실수
+### 스트레스 받을 때 나타나는 패턴
+### 사람을 보고 판단하는 방식
+### 과하거나 부족한 기운
+오행, 십성, 신강/신약, 원국 상호작용이 있다면 적극 활용.
 
-## 3. 강점과 재능
-어떤 환경에서 강점이 드러나는지 구체적으로
+## 3. 직업과 일
+### 조직생활과 독립적 일의 적합도
+### 리더형 / 실무형 성향
+### 혼자 일할 때와 협업할 때
+### 잘 맞는 업무환경
+### 피로해지기 쉬운 업무환경
+### 돈으로 연결하기 쉬운 강점
+십성, 격국, 용신, 신강/신약 데이터를 근거로 설명.
 
-## 4. 반복될 수 있는 약점과 스트레스 패턴
-실제 생활에서 어떻게 나타날 수 있는지 구체적으로
+## 4. 사업 성향
+### 사업가적 성향
+### 독립성
+### 리더십
+### 동업 성향
+### 위험 감수 방식
+### 사업에서 조심할 패턴
+운명처럼 단정하지 말고 성향으로 해석.
 
-## 5. 일과 직업
-조직/독립, 안정/변화, 사람/과업, 기획/실행 관점에서 자세히
+## 5. 재물운
+### 돈을 버는 방식
+### 돈을 모으고 지키는 방식
+### 안정 수입과 기회형 수입 중 어느 쪽에 가까운지
+### 돈이 새기 쉬운 패턴
+### 재물 흐름을 볼 때 주의할 점
+십성·재성·대운·세운 관련 데이터가 실제로 있을 때만 연결.
 
-## 6. 사업 성향
-창업, 독립성, 리더십, 동업, 위험 감수에 대한 전통 명리 관점의 해석
+## 6. 연애와 인간관계
+### 연애할 때의 모습
+### 관계에서 중요하게 느끼는 것
+### 끌리기 쉬운 관계
+### 갈등 시 패턴
+### 결혼생활에서 중요하게 작용할 성향
+### 친구관계
+### 직장 인간관계
+합충형파해와 원국 상호작용이 있으면 관계 해석에 활용.
 
-## 7. 돈과 재물
-돈을 버는 방식, 쓰는 방식, 관리 경향, 주의점
+## 7. 사주의 골격
+### 신강 / 신약
+### 격국
+### 용신 / 희신 / 기신 / 구신
+### 합·형·충·파·해
+### 신살
+### 허자
+각 데이터가 실제로 존재할 경우 그 의미와 현실에서 어떻게 작용할 수 있는지 설명.
 
-## 8. 인간관계
-대인관계에서 나타나는 특징, 거리감, 갈등 방식
+## 8. 인생의 흐름
+### 대운 전체 흐름
+### 현재 대운
+### 다음 대운
+### 세운
+### 최근과 앞으로의 주목할 시기
+반드시 API가 제공한 실제 대운/세운 데이터에 근거한다.
+구체적 사건을 확정적으로 예언하지 않고 '경향'으로 설명.
 
-## 9. 연애와 가까운 관계
-관계에서 중요하게 느끼는 것과 반복될 수 있는 패턴
+## 9. 종합평가
+API의 evaluation/종합평가 데이터가 있다면 다른 모듈과 교차해서 설명.
+없다면 지금까지의 근거를 종합.
 
-## 10. 삶의 흐름
-실제 제공된 대운/운세 데이터가 있을 때만 경향을 설명
+## 10. 당신의 사주를 한 문장으로 표현하면
+짧고 인상적으로 한 문장.
 
-## 11. 지금 관심 분야에 대한 집중 해석
-사용자가 선택한 '{focus}'를 가장 자세히 설명
+## 11. 가장 잘 활용해야 할 것
+강점과 유리한 방향을 3개.
 
-## 12. 현실에서 활용하는 방법
-작고 구체적인 행동 제안 5개
+## 12. 가장 경계해야 할 것
+반복 실수와 위험 패턴을 3개.
+
+## 13. 현실에서의 방향
+사주를 맹신하지 않는 전제로 지금 삶에서 참고할 수 있는 구체적인 행동 5개.
 
 마지막 문구:
 "이 내용은 전통 명리학을 AI가 해석한 자기성찰·엔터테인먼트 콘텐츠이며, 중요한 의사결정의 유일한 근거로 사용하지 마세요."
 """
-
     stream = client.responses.create(
         model="gpt-5-mini",
         input=prompt,
@@ -180,13 +213,12 @@ def stream_premium_report(name, gender, focus, saju_data):
     )
 
     for event in stream:
-        # Responses API streaming event compatibility
         if getattr(event, "type", None) == "response.output_text.delta":
             yield event.delta
 
 # ---------- UI ----------
-st.title("🔮 AI 사주")
-st.caption("출생정보를 입력하면 무료 핵심 풀이를 빠르게 확인할 수 있습니다.")
+st.title("🔮 AI 정밀 사주")
+st.caption("무료 핵심 풀이를 먼저 확인하고, 원하면 전체 정밀 리포트를 볼 수 있습니다.")
 
 name = st.text_input("이름", placeholder="예: 홍길동")
 
@@ -215,13 +247,6 @@ gender = st.radio(
     label_visibility="collapsed"
 )
 
-st.subheader("가장 궁금한 분야")
-focus = st.selectbox(
-    "관심 분야",
-    ["전체적인 사주", "직업·사업", "돈·재물", "연애·관계", "앞으로의 흐름"],
-    label_visibility="collapsed"
-)
-
 st.divider()
 
 if st.button("✨ 무료로 내 사주 보기", type="primary", use_container_width=True):
@@ -235,22 +260,19 @@ if st.button("✨ 무료로 내 사주 보기", type="primary", use_container_wi
         st.error("OpenAI API 키가 설정되지 않았습니다.")
         st.stop()
 
-    # 입력값이 바뀌면 기존 상세 리포트 상태 초기화
-    st.session_state.pop("show_full_report", None)
     st.session_state.pop("premium_report", None)
+    st.session_state.pop("show_full_report", None)
 
     try:
         with st.spinner("사주 데이터를 계산하고 있어요..."):
             data = calculate_saju(year, month, day, birth_time, gender)
 
-        # 사주 데이터는 재사용
         st.session_state["saju_data"] = data
         st.session_state["saju_name"] = name
         st.session_state["saju_gender"] = gender
-        st.session_state["saju_focus"] = focus
 
-        with st.spinner("핵심만 빠르게 보고 있어요..."):
-            preview = generate_preview(name, gender, focus, data)
+        with st.spinner("핵심 풀이를 만들고 있어요..."):
+            preview = generate_preview(name, gender, data)
 
         st.session_state["preview"] = preview
 
@@ -261,16 +283,14 @@ if "preview" in st.session_state:
     preview = st.session_state["preview"]
 
     st.success("무료 핵심 풀이가 완성되었습니다.")
-
     st.markdown("## 한눈에 보는 당신의 사주")
 
     keywords = preview.get("keywords", [])
     if keywords:
         st.markdown(" · ".join([f"**{k}**" for k in keywords]))
 
-    headline = preview.get("headline", "")
-    if headline:
-        st.markdown(f"### {headline}")
+    if preview.get("headline"):
+        st.markdown(f"### {preview['headline']}")
 
     st.write(preview.get("core", ""))
 
@@ -278,63 +298,56 @@ if "preview" in st.session_state:
         st.info(preview["hook"])
 
     st.divider()
-    st.markdown("## 🔒 전체 사주 리포트에서 확인할 수 있어요")
-    for title in [
-        "사주 핵심 구조",
-        "기본 성향과 기질",
-        "강점과 재능",
-        "반복되는 약점과 스트레스 패턴",
-        "일과 직업",
-        "사업 성향",
-        "돈과 재물",
-        "인간관계",
-        "연애와 가까운 관계",
-        "삶의 흐름",
-        "관심 분야 집중 해석",
-        "현실에서 활용하는 방법",
-    ]:
+    st.markdown("## 🔒 전체 정밀 사주에서 확인할 수 있습니다")
+
+    sections = {
+        "나라는 사람": "타고난 기질 · 내면과 외면 · 강점 · 약점 · 스트레스 패턴",
+        "직업과 일": "조직생활 · 독립형 일 · 리더십 · 적합한 업무환경 · 돈으로 연결되는 강점",
+        "사업 성향": "창업 성향 · 독립성 · 동업 · 리더십 · 사업에서 조심할 점",
+        "재물운": "돈 버는 방식 · 돈을 모으는 방식 · 재물 패턴 · 주의할 점",
+        "연애와 인간관계": "연애 성향 · 갈등 패턴 · 결혼생활 · 친구 · 직장 관계",
+        "사주의 골격": "신강/신약 · 격국 · 용신 · 희신 · 기신 · 합형충파해 · 신살 · 허자",
+        "인생의 흐름": "대운 · 현재 흐름 · 다음 대운 · 세운 · 주목할 시기",
+        "마지막 종합 풀이": "당신을 한 문장으로 · 가장 활용할 강점 · 가장 경계할 점 · 현실 방향",
+    }
+
+    for title, desc in sections.items():
         st.markdown(f"🔒 **{title}**")
+        st.caption(desc)
 
     st.markdown("---")
-    st.markdown("### 전체 사주 풀이 · 4,900원")
-    st.caption("상세 리포트는 결제 후 생성되므로 무료 결과가 더 빠르게 표시됩니다.")
+    st.markdown("### AI 정밀 사주 전체 풀이 · 4,900원")
+    st.caption("단순 운세 문장이 아니라 실제 명리 데이터의 근거를 바탕으로 상세하게 풀이합니다.")
 
     if PAYMENT_URL:
-        st.link_button("💳 전체 사주 풀이 구매하기", PAYMENT_URL, use_container_width=True)
-        st.caption("※ 현재는 외부 결제 링크 연결용입니다.")
+        st.link_button("💳 전체 정밀 사주 구매하기", PAYMENT_URL, use_container_width=True)
+        st.caption("※ 결제 완료 후 자동 잠금 해제 기능은 결제 연동 단계에서 연결합니다.")
     else:
-        st.button("💳 전체 사주 풀이 구매하기", use_container_width=True, disabled=True)
+        st.button("💳 전체 정밀 사주 구매하기", use_container_width=True, disabled=True)
         st.caption("결제 링크 연결 전 테스트 버전입니다.")
 
-    # 운영자 테스트용
     if TEST_MODE:
         st.divider()
         st.markdown("### 🧪 운영자 테스트")
-        st.caption("이 버튼은 TEST_MODE=true일 때만 보입니다.")
-
-        if st.button("전체 상세 리포트 생성 테스트", use_container_width=True):
+        if st.button("전체 정밀 리포트 생성 테스트", use_container_width=True):
             st.session_state["show_full_report"] = True
 
         if st.session_state.get("show_full_report"):
-            st.markdown("## 전체 상세 리포트")
+            st.markdown("## 전체 정밀 사주 리포트")
 
             if "premium_report" not in st.session_state:
                 placeholder = st.empty()
                 full_text = ""
-
                 try:
                     for chunk in stream_premium_report(
                         st.session_state["saju_name"],
                         st.session_state["saju_gender"],
-                        st.session_state["saju_focus"],
                         st.session_state["saju_data"],
                     ):
                         full_text += chunk
                         placeholder.markdown(full_text + "▌")
-
                     placeholder.markdown(full_text)
                     st.session_state["premium_report"] = full_text
-
                 except Exception as e:
                     st.error(f"상세 리포트 생성 중 오류: {e}")
             else:
