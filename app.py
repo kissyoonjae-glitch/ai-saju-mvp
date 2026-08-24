@@ -55,39 +55,74 @@ def calculate_saju(year, month, day, birth_time, gender):
 
 def generate_preview(name, gender, saju_data, time_unknown=False):
     client = OpenAI(api_key=OPENAI_API_KEY)
+
     prompt = f"""
-너는 전통 명리학 데이터를 바탕으로 무료 맛보기 사주를 작성한다.
+너는 전통 명리 데이터를 바탕으로 '결제 전 무료 사주'를 작성하는 프리미엄 명리 에디터다.
 
-사용자 이름: {name}
+이름: {name}
 성별: {gender}
+출생시각 미상 여부: {time_unknown}
 
-아래 데이터만 근거로 해석한다.
+사주 원자료:
 {json.dumps(saju_data, ensure_ascii=False, indent=2)}
 
-원칙:
-- 출생시각 미상 여부: {time_unknown}
-- 출생시각 미상(True)이면 시주를 전제로 한 해석을 하지 않는다.
-- 무료 맛보기는 짧지만 구체적이어야 한다.
-- 누구에게나 맞는 말만 하지 않는다.
-- 가능한 경우 '사주 데이터 근거 → 해석 → 현실에서 나타날 수 있는 모습' 순서로 쓴다.
-- 미래를 확정적으로 예언하지 않는다.
-- 공포를 조장하지 않는다.
-- JSON만 출력한다.
+[목표]
+무료 결과를 많이 주는 것이 목적이 아니다.
+독자가 30~60초 동안 읽으며 "이런 부분까지 읽는다고?"라는 적중감과 호기심을 느끼게 한다.
+그 뒤 더 깊은 직업·사업·돈·관계·인생 흐름을 알고 싶게 만든다.
 
-추가 규칙:
-- 사주 데이터에 근거해 사용자의 현대적 '사주 캐릭터'를 하나 만든다.
-- 캐릭터명은 "전략적 개척자형", "꾸준한 축적가형", "섬세한 조율가형", "몰입하는 장인형", "판을 읽는 전략가형"처럼 짧고 매력적으로 만든다.
-- 사용자를 유명인과 동일한 사주라고 주장하지 않는다.
-- 무료 화면에서는 유명인 이름을 공개하지 않는다. 유료 리포트에서만 근거와 함께 비유한다.
+[절대 원칙]
+- 제공된 사주 데이터에 없는 내용은 만들지 않는다.
+- 출생시각 미상이면 시주를 전제로 한 해석을 하지 않는다.
+- API/JSON 내부 필드명은 절대 노출하지 않는다.
+- 누구에게나 맞을 법한 일반론은 피한다.
+- 성공, 부, 결혼, 사건 등을 확정적으로 예언하지 않는다.
+- 공포심을 이용해 결제를 유도하지 않는다.
+- "당신은 특별하다" 같은 빈 칭찬보다 실제 패턴을 말한다.
+- 전문용어는 최소화하고 필요하면 쉬운 말로 풀어쓴다.
+- 무료 결과에서 유명인 이름은 공개하지 않는다.
 
-형식:
+[무엇을 우선 찾아야 하는가]
+전체 데이터 중 가장 구체적이고 개인적으로 느껴질 특징을 찾는다.
+특히 다음이 실제 데이터에 있으면 우선 검토한다:
+- 서로 충돌하는 두 성향
+- 오행의 뚜렷한 과다/부족
+- 강하게 드러나는 십성 조합
+- 신강/신약
+- 합·충·형·파·해
+- 격국/용신
+- 반복될 가능성이 있는 행동 패턴
+
+[출력]
+반드시 아래 JSON 형식만 출력한다.
+
 {{
-  "keywords": ["핵심키워드1", "핵심키워드2", "핵심키워드3"],
-  "headline": "이 사람의 사주를 한 문장으로 표현",
-  "core": "핵심 성향 2개 문단",
-  "character_name": "사주 캐릭터명",
-  "character_teaser": "이 캐릭터를 설명하는 짧고 인상적인 한 문장",
-  "hook": "상세 리포트에서 캐릭터 비유와 명리 근거까지 확인하고 싶게 만드는 한 문장"
+  "opening_title": "이 사주에서 가장 먼저 눈에 들어오는 특징을 한 문장으로. 평범한 칭찬 금지.",
+  "opening_body": "왜 그렇게 읽히는지와 현실에서 나타날 수 있는 모습을 2개의 짧은 문단으로.",
+  "hit_patterns": [
+    "구체적인 생활/행동 패턴 1",
+    "구체적인 생활/행동 패턴 2",
+    "구체적인 생활/행동 패턴 3"
+  ],
+  "contradiction_title": "이 사주에서 발견되는 흥미로운 모순을 짧게 표현",
+  "contradiction_body": "서로 다른 두 힘이 어떻게 동시에 나타날 수 있는지 1~2문단으로 설명",
+  "character_name": "현대적인 사주 캐릭터명",
+  "character_teaser": "이 캐릭터의 핵심을 기억에 남는 한두 문장으로 설명",
+  "locked_hooks": [
+    {{
+      "title": "돈/재물에서 실제 데이터로 더 깊게 풀 수 있는 궁금증",
+      "teaser": "정답을 다 말하지 않고 왜 더 볼 가치가 있는지 한 문장"
+    }},
+    {{
+      "title": "직업/사업에서 실제 데이터로 더 깊게 풀 수 있는 궁금증",
+      "teaser": "정답을 다 말하지 않고 왜 더 볼 가치가 있는지 한 문장"
+    }},
+    {{
+      "title": "관계 또는 인생 흐름에서 실제 데이터로 더 깊게 풀 수 있는 궁금증",
+      "teaser": "정답을 다 말하지 않고 왜 더 볼 가치가 있는지 한 문장"
+    }}
+  ],
+  "closing_hook": "무료 해석에서 드러난 특징을 바탕으로, 정밀 사주가 무엇을 더 연결해서 보여주는지 한 문장"
 }}
 """
     response = client.responses.create(model="gpt-5-mini", input=prompt)
@@ -585,72 +620,118 @@ elif st.session_state["page"] == "result":
             go_input()
             st.rerun()
     with top2:
-        st.markdown(f'<div class="section-kicker">SAJU READING</div><div class="result-title">{name}님의 사주 풀이</div>', unsafe_allow_html=True)
-
-    st.markdown('<div class="saju-card">', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="section-kicker">SAJU READING</div>'
+            f'<div class="result-title">{name}님의 사주 풀이</div>',
+            unsafe_allow_html=True
+        )
 
     if time_unknown:
-        st.info("출생시각 미상으로 시주 기반 해석은 제외하고 풀이합니다.")
+        st.info("출생시각 미상으로 시주 기반 해석은 제외하고 풀이했습니다.")
 
-    keywords = preview.get("keywords", [])
-    if keywords:
-        kw_html = "".join([f'<span class="keyword">{k}</span>' for k in keywords])
-        st.markdown(f'<div class="keyword-wrap">{kw_html}</div>', unsafe_allow_html=True)
+    # 1. 첫 적중 포인트
+    st.markdown('<div class="saju-card">', unsafe_allow_html=True)
+    st.markdown('<div class="section-kicker">FIRST IMPRESSION</div>', unsafe_allow_html=True)
+    st.markdown(f"## {preview.get('opening_title', '당신의 사주에서 먼저 보이는 것')}")
+    st.write(preview.get("opening_body", ""))
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    if preview.get("headline"):
-        st.markdown(f"### {preview['headline']}")
+    # 2. 생활 패턴 체크
+    patterns = preview.get("hit_patterns", [])
+    if patterns:
+        st.markdown("## 혹시 이런 적 있나요?")
+        st.caption("사주 구조에서 비교적 선명하게 읽히는 생활 패턴입니다.")
+        for p in patterns:
+            st.markdown(
+                f'<div class="locked-box" style="border-left:3px solid #c6a15b;">'
+                f'<span style="color:#c6a15b;font-weight:800;">✓</span> '
+                f'<span style="color:#efe6d8;">{p}</span></div>',
+                unsafe_allow_html=True
+            )
 
-    st.write(preview.get("core", ""))
+    # 3. 사주의 모순
+    contradiction_title = preview.get("contradiction_title", "")
+    contradiction_body = preview.get("contradiction_body", "")
+    if contradiction_title:
+        st.markdown('<div class="saju-card">', unsafe_allow_html=True)
+        st.markdown('<div class="section-kicker">HIDDEN CONTRADICTION</div>', unsafe_allow_html=True)
+        st.markdown("## 그런데, 이 사주에는 재미있는 모순이 있습니다")
+        st.markdown(f"### {contradiction_title}")
+        st.write(contradiction_body)
+        st.markdown('</div>', unsafe_allow_html=True)
 
+    # 4. 캐릭터
     character_name = preview.get("character_name", "")
     character_teaser = preview.get("character_teaser", "")
     if character_name:
-        st.markdown("### 🎭 나의 사주 캐릭터")
-        st.markdown(f"**{character_name}**")
-        if character_teaser:
-            st.write(character_teaser)
-        st.caption("정밀 사주에서는 이 캐릭터가 나온 명리 근거와 현대적 인물 비유까지 확인할 수 있습니다.")
+        st.markdown('<div class="saju-card">', unsafe_allow_html=True)
+        st.markdown('<div class="section-kicker">SAJU CHARACTER</div>', unsafe_allow_html=True)
+        st.markdown("## 당신의 사주 캐릭터")
+        st.markdown(f"### {character_name}")
+        st.write(character_teaser)
+        st.caption("정밀 사주에서는 이 캐릭터가 나온 명리 근거와, 적절한 경우 이해를 돕는 현대적 인물 비유까지 이어집니다.")
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    if preview.get("hook"):
-        st.info(preview["hook"])
+    # 5. 잠금 훅
+    st.markdown('<div class="section-kicker">WHAT COMES NEXT</div>', unsafe_allow_html=True)
+    st.markdown("## 그런데 더 흥미로운 건 여기부터입니다")
 
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    st.markdown('<div class="section-kicker">PREMIUM READING</div>', unsafe_allow_html=True)
-    st.markdown("## 🔒 전체 정밀 사주에서 확인할 수 있습니다")
-
-    sections = {
-        "나의 사주 캐릭터": "캐릭터 유형 · 명리 근거 · 현대적 인물 비유",
-        "나라는 사람": "결정 방식 · 강점 · 스스로 발목 잡는 패턴 · 스트레스가 쌓일 때의 모습",
-        "직업과 일": "힘이 살아나는 환경 · 오래 버티기 힘든 일 · 직업 선택의 핵심",
-        "사업 성향": "판을 만드는 성향 · 사업에서 강한 무기 · 가장 위험한 습관",
-        "재물운": "버는 힘 · 지키는 힘 · 돈에서 반복하지 말아야 할 패턴",
-        "연애와 인간관계": "가까워질수록 드러나는 모습 · 연애 · 친구/동료 · 갈등 패턴",
-        "사주의 숨은 긴장": "서로 충돌하는 성향 · 오행의 균형 · 내면에서 반복되는 긴장",
-        "인생의 흐름": "대운 · 현재 흐름 · 다음 대운 · 세운 · 주목할 시기",
-        "마지막 종합 풀이": "가장 활용해야 할 것 · 가장 경계해야 할 것 · 이 사주를 현실에서 쓰는 법",
-    }
-
-    for title, desc in sections.items():
+    hooks = preview.get("locked_hooks", [])
+    for h in hooks[:3]:
+        title = h.get("title", "") if isinstance(h, dict) else str(h)
+        teaser = h.get("teaser", "") if isinstance(h, dict) else ""
         st.markdown(
-            f'<div class="locked-box">🔒 <b>{title}</b><br><span style="color:#b9aa96;font-size:.9rem">{desc}</span></div>',
+            f'<div class="locked-box">'
+            f'🔒 <b>{title}</b><br>'
+            f'<span style="color:#b9aa96;font-size:.92rem">{teaser}</span>'
+            f'</div>',
             unsafe_allow_html=True
         )
+
+    if preview.get("closing_hook"):
+        st.info(preview["closing_hook"])
+
+    # 6. 구매 가치 설명
+    st.markdown('<div class="saju-card">', unsafe_allow_html=True)
+    st.markdown('<div class="section-kicker">FULL READING</div>', unsafe_allow_html=True)
+    st.markdown("## 여기까지는 사주의 표면입니다.")
+    st.write(
+        "정밀 사주에서는 단순히 항목을 늘리는 것이 아니라, "
+        "**왜 이런 패턴을 반복하는지, 어떤 방식으로 일할 때 힘이 살아나는지, "
+        "돈을 버는 힘과 지키는 힘은 어떻게 다른지, 가까운 관계에서는 무엇이 반복되는지, "
+        "그리고 실제 데이터가 있는 경우 현재와 다음 흐름에서 무엇이 달라지는지**를 하나로 연결해 풀이합니다."
+    )
+
+    st.markdown("**정밀 사주에서 이어지는 내용**")
+    st.markdown(
+        """
+- 나의 사주 캐릭터와 그 명리적 근거
+- 나를 움직이게 하는 힘과 스스로 발목 잡는 패턴
+- 직업에서 힘이 살아나는 환경과 피해야 할 환경
+- 사업을 한다면 강한 무기와 위험한 습관
+- 돈을 버는 방식과 지키는 방식
+- 연애·친구·동료 관계에서 반복되는 패턴
+- 사주 안에서 충돌하는 두 힘과 숨은 긴장
+- 대운·세운 데이터가 있을 경우 현재와 다음 흐름
+- 결국 이 사주를 현실에서 어떻게 활용할 것인가
+        """
+    )
+    st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown(
         """
         <div class="price-box">
-            <h3>AI 정밀 사주 전체 풀이 · 4,900원</h3>
-            <p>데이터를 나열하지 않습니다. 당신이 어떻게 움직이고, 어디서 강해지며, 무엇이 발목을 잡는지 하나의 이야기처럼 풀어드립니다.</p>
+            <h3>내 사주 전체 해석 열기 · 4,900원</h3>
+            <p>데이터를 나열하지 않고, 당신의 기질·일·돈·관계·흐름을 하나의 이야기처럼 연결해 풀어드립니다.</p>
         </div>
         """,
         unsafe_allow_html=True
     )
 
     if PAYMENT_URL:
-        st.link_button("💳 전체 정밀 사주 구매하기", PAYMENT_URL, use_container_width=True)
+        st.link_button("🔓 정밀 사주 전체 해석 열기", PAYMENT_URL, use_container_width=True)
     else:
-        st.button("💳 전체 정밀 사주 구매하기", use_container_width=True, disabled=True)
+        st.button("🔓 정밀 사주 전체 해석 열기", use_container_width=True, disabled=True)
         st.caption("결제 링크 연결 전 테스트 버전입니다.")
 
     if TEST_MODE:
