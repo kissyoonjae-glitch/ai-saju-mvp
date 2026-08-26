@@ -19,6 +19,15 @@ OPENAI_API_KEY = get_secret("OPENAI_API_KEY")
 PAYMENT_URL = get_secret("PAYMENT_URL")
 TEST_MODE = str(get_secret("TEST_MODE", "false")).lower() == "true"
 
+# PG 심사/전자상거래 표시용 사업자 정보
+BUSINESS_NAME = get_secret("BUSINESS_NAME", "원엔랩(1NLAB)")
+REPRESENTATIVE_NAME = get_secret("REPRESENTATIVE_NAME", "미설정")
+BUSINESS_NUMBER = get_secret("BUSINESS_NUMBER", "미설정")
+BUSINESS_ADDRESS = get_secret("BUSINESS_ADDRESS", "미설정")
+CUSTOMER_SERVICE_PHONE = get_secret("CUSTOMER_SERVICE_PHONE", "미설정")
+CUSTOMER_SERVICE_EMAIL = get_secret("CUSTOMER_SERVICE_EMAIL", "미설정")
+ECOMMERCE_NUMBER = get_secret("ECOMMERCE_NUMBER", "통신판매업 신고 면제 또는 신고 전")
+
 def clean_json_text(text):
     text = text.strip()
     text = re.sub(r"^```(?:json)?\s*", "", text)
@@ -295,7 +304,227 @@ E. 동시에 그 성향이 지나치면 생기는 함정
         if getattr(event, "type", None) == "response.output_text.delta":
             yield event.delta
 
+
+def render_product_and_policies():
+    """PG 심사에서 확인할 판매상품/약관/개인정보/환불정보."""
+    st.markdown("---")
+    st.markdown('<div class="section-kicker">SERVICE INFORMATION</div>', unsafe_allow_html=True)
+    st.markdown("## 판매 상품 안내")
+
+    st.markdown(
+        """
+        <div class="product-card">
+            <div style="font-size:1.15rem;font-weight:800;color:#f2e8d9;">AI 정밀 사주 전체 리포트</div>
+            <div class="price">4,900원 <span style="font-size:.82rem;color:#a99b8b;font-weight:500;">(부가세 포함)</span></div>
+            <div style="color:#c8bbac;line-height:1.75;">
+                출생정보를 바탕으로 전통 명리 데이터를 계산하고 AI가 현대적인 언어로 해석하는 디지털 리포트입니다.<br>
+                주요 구성: 기질·강점·반복 패턴·직업/사업·재물·관계·대운/세운(데이터 제공 시)·종합 방향.<br>
+                <b style="color:#e4d3b7;">제공 시점:</b> 결제 확인 후 즉시 생성 시작, 통상 수분 이내 화면에서 제공됩니다.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown("### 이용 및 결제 전 안내")
+    st.markdown(
+        """
+        <div class="legal-summary">
+        본 서비스는 전통 명리학을 AI가 해석하는 자기성찰·엔터테인먼트 목적의 디지털 콘텐츠입니다.
+        의료·법률·재정·투자 등 중요한 의사결정의 유일한 근거로 사용해서는 안 됩니다.
+        입력정보의 정확도에 따라 결과가 달라질 수 있으며, 출생시각 미상 시 시주 기반 해석은 제외됩니다.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    with st.expander("이용약관"):
+        st.markdown(f"""
+**제1조 목적**  
+본 약관은 {BUSINESS_NAME}(이하 "회사")가 제공하는 AI 정밀 사주 및 관련 디지털 서비스의 이용조건을 정합니다.
+
+**제2조 서비스의 성격**  
+서비스는 이용자가 입력한 출생정보를 바탕으로 명리 계산 결과와 AI 해석을 제공하는 디지털 콘텐츠입니다. 결과는 오락·자기성찰 목적의 참고정보이며 특정 미래나 사건을 보장하지 않습니다.
+
+**제3조 이용자의 의무**  
+이용자는 본인의 정보 또는 적법하게 이용 권한이 있는 정보를 입력해야 하며, 타인의 개인정보를 무단으로 입력하거나 서비스 운영을 방해해서는 안 됩니다.
+
+**제4조 결제 및 제공**  
+유료 상품의 가격은 구매 화면에 표시하며, 결제 승인 후 디지털 리포트 생성이 시작됩니다. 시스템 장애 등으로 제공이 완료되지 않은 경우 회사는 재제공 또는 환불 등 합리적인 조치를 합니다.
+
+**제5조 서비스 변경·중단**  
+점검, 장애, 외부 API 장애 등 불가피한 사유가 있는 경우 서비스가 일시 중단될 수 있습니다. 유료 서비스가 정상 제공되지 않은 경우 회사는 이용자에게 재제공 또는 환불 절차를 안내합니다.
+
+**제6조 책임 제한**  
+회사는 AI 해석을 근거로 이용자가 내린 개인적 의사결정의 결과를 보증하지 않습니다. 다만 관계 법령상 회사의 책임이 인정되는 경우에는 해당 법령을 따릅니다.
+
+**제7조 문의**  
+고객문의: {CUSTOMER_SERVICE_PHONE} / {CUSTOMER_SERVICE_EMAIL}
+""")
+
+    with st.expander("개인정보처리방침"):
+        st.markdown(f"""
+**1. 수집 항목**  
+서비스 이용 과정에서 이름, 생년월일, 출생시각(선택), 성별과 서비스 이용·결제에 필요한 최소 정보가 처리될 수 있습니다.
+
+**2. 이용 목적**  
+사주 계산, AI 해석 결과 생성, 결제 확인, 고객문의 처리, 서비스 오류 대응을 위해 사용합니다.
+
+**3. 외부 처리 서비스 이용**  
+서비스 제공을 위해 만세력 계산 API와 AI API 등 외부 기술 서비스를 사용할 수 있으며, 결과 생성에 필요한 입력정보 일부가 해당 처리 과정에서 전송될 수 있습니다.
+
+**4. 보유 및 파기**  
+법령상 보존 의무가 있는 결제·거래 정보는 해당 기간 동안 보관할 수 있습니다. 그 외 분석용 입력정보는 서비스 제공 목적 달성 후 불필요한 범위에서 보유하지 않는 것을 원칙으로 하며, 운영상 저장 기능을 추가하는 경우 보유기간을 별도로 고지합니다.
+
+**5. 이용자의 권리**  
+이용자는 관계 법령이 정한 범위에서 개인정보 열람·정정·삭제 및 처리 관련 문의를 할 수 있습니다.
+
+**6. 개인정보 문의**  
+{CUSTOMER_SERVICE_EMAIL} / {CUSTOMER_SERVICE_PHONE}
+
+※ 실제 운영 전 외부 API의 개인정보 처리·국외이전 조건과 결제대행사 처리사항을 확인하여 본 방침을 최종 보완합니다.
+""")
+
+    with st.expander("취소·환불 정책"):
+        st.markdown(f"""
+**AI 정밀 사주 전체 리포트 (디지털 콘텐츠)**
+
+- 결제 후 상세 리포트 **생성 시작 전** 취소 요청: 전액 환불을 원칙으로 합니다.
+- 상세 리포트가 생성되기 시작했거나 제공이 완료된 경우: 디지털 콘텐츠의 특성 및 관계 법령에 따라 청약철회가 제한될 수 있습니다.
+- 서비스 오류로 리포트가 생성되지 않거나 정상적으로 제공되지 않은 경우: 재제공 또는 환불을 요청할 수 있습니다.
+- 중복 결제·오결제 확인 시: 확인 후 해당 금액을 환불합니다.
+- 환불 문의: {CUSTOMER_SERVICE_PHONE} / {CUSTOMER_SERVICE_EMAIL}
+
+실제 결제 단계에서는 디지털 콘텐츠의 즉시 제공 및 청약철회 제한 가능성에 관한 동의 절차를 별도로 표시합니다.
+""")
+
+def render_business_footer():
+    st.markdown(
+        f"""
+        <div class="commerce-info">
+        <b>{BUSINESS_NAME}</b><br>
+        대표자: {REPRESENTATIVE_NAME} &nbsp;|&nbsp; 사업자등록번호: {BUSINESS_NUMBER}<br>
+        사업장 소재지: {BUSINESS_ADDRESS}<br>
+        고객센터: {CUSTOMER_SERVICE_PHONE} &nbsp;|&nbsp; 이메일: {CUSTOMER_SERVICE_EMAIL}<br>
+        통신판매업 신고번호: {ECOMMERCE_NUMBER}<br>
+        서비스: AI 정밀 사주 디지털 리포트 &nbsp;|&nbsp; 판매가: 4,900원 (부가세 포함)
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
 # ---------- UI ----------
+
+
+def render_product_and_policies():
+    """PG 심사에서 확인할 판매상품/약관/개인정보/환불정보."""
+    st.markdown("---")
+    st.markdown('<div class="section-kicker">SERVICE INFORMATION</div>', unsafe_allow_html=True)
+    st.markdown("## 판매 상품 안내")
+
+    st.markdown(
+        """
+        <div class="product-card">
+            <div style="font-size:1.15rem;font-weight:800;color:#f2e8d9;">AI 정밀 사주 전체 리포트</div>
+            <div class="price">4,900원 <span style="font-size:.82rem;color:#a99b8b;font-weight:500;">(부가세 포함)</span></div>
+            <div style="color:#c8bbac;line-height:1.75;">
+                출생정보를 바탕으로 전통 명리 데이터를 계산하고 AI가 현대적인 언어로 해석하는 디지털 리포트입니다.<br>
+                주요 구성: 기질·강점·반복 패턴·직업/사업·재물·관계·대운/세운(데이터 제공 시)·종합 방향.<br>
+                <b style="color:#e4d3b7;">제공 시점:</b> 결제 확인 후 즉시 생성 시작, 통상 수분 이내 화면에서 제공됩니다.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown("### 이용 및 결제 전 안내")
+    st.markdown(
+        """
+        <div class="legal-summary">
+        본 서비스는 전통 명리학을 AI가 해석하는 자기성찰·엔터테인먼트 목적의 디지털 콘텐츠입니다.
+        의료·법률·재정·투자 등 중요한 의사결정의 유일한 근거로 사용해서는 안 됩니다.
+        입력정보의 정확도에 따라 결과가 달라질 수 있으며, 출생시각 미상 시 시주 기반 해석은 제외됩니다.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    with st.expander("이용약관"):
+        st.markdown(f"""
+**제1조 목적**  
+본 약관은 {BUSINESS_NAME}(이하 "회사")가 제공하는 AI 정밀 사주 및 관련 디지털 서비스의 이용조건을 정합니다.
+
+**제2조 서비스의 성격**  
+서비스는 이용자가 입력한 출생정보를 바탕으로 명리 계산 결과와 AI 해석을 제공하는 디지털 콘텐츠입니다. 결과는 오락·자기성찰 목적의 참고정보이며 특정 미래나 사건을 보장하지 않습니다.
+
+**제3조 이용자의 의무**  
+이용자는 본인의 정보 또는 적법하게 이용 권한이 있는 정보를 입력해야 하며, 타인의 개인정보를 무단으로 입력하거나 서비스 운영을 방해해서는 안 됩니다.
+
+**제4조 결제 및 제공**  
+유료 상품의 가격은 구매 화면에 표시하며, 결제 승인 후 디지털 리포트 생성이 시작됩니다. 시스템 장애 등으로 제공이 완료되지 않은 경우 회사는 재제공 또는 환불 등 합리적인 조치를 합니다.
+
+**제5조 서비스 변경·중단**  
+점검, 장애, 외부 API 장애 등 불가피한 사유가 있는 경우 서비스가 일시 중단될 수 있습니다. 유료 서비스가 정상 제공되지 않은 경우 회사는 이용자에게 재제공 또는 환불 절차를 안내합니다.
+
+**제6조 책임 제한**  
+회사는 AI 해석을 근거로 이용자가 내린 개인적 의사결정의 결과를 보증하지 않습니다. 다만 관계 법령상 회사의 책임이 인정되는 경우에는 해당 법령을 따릅니다.
+
+**제7조 문의**  
+고객문의: {CUSTOMER_SERVICE_PHONE} / {CUSTOMER_SERVICE_EMAIL}
+""")
+
+    with st.expander("개인정보처리방침"):
+        st.markdown(f"""
+**1. 수집 항목**  
+서비스 이용 과정에서 이름, 생년월일, 출생시각(선택), 성별과 서비스 이용·결제에 필요한 최소 정보가 처리될 수 있습니다.
+
+**2. 이용 목적**  
+사주 계산, AI 해석 결과 생성, 결제 확인, 고객문의 처리, 서비스 오류 대응을 위해 사용합니다.
+
+**3. 외부 처리 서비스 이용**  
+서비스 제공을 위해 만세력 계산 API와 AI API 등 외부 기술 서비스를 사용할 수 있으며, 결과 생성에 필요한 입력정보 일부가 해당 처리 과정에서 전송될 수 있습니다.
+
+**4. 보유 및 파기**  
+법령상 보존 의무가 있는 결제·거래 정보는 해당 기간 동안 보관할 수 있습니다. 그 외 분석용 입력정보는 서비스 제공 목적 달성 후 불필요한 범위에서 보유하지 않는 것을 원칙으로 하며, 운영상 저장 기능을 추가하는 경우 보유기간을 별도로 고지합니다.
+
+**5. 이용자의 권리**  
+이용자는 관계 법령이 정한 범위에서 개인정보 열람·정정·삭제 및 처리 관련 문의를 할 수 있습니다.
+
+**6. 개인정보 문의**  
+{CUSTOMER_SERVICE_EMAIL} / {CUSTOMER_SERVICE_PHONE}
+
+※ 실제 운영 전 외부 API의 개인정보 처리·국외이전 조건과 결제대행사 처리사항을 확인하여 본 방침을 최종 보완합니다.
+""")
+
+    with st.expander("취소·환불 정책"):
+        st.markdown(f"""
+**AI 정밀 사주 전체 리포트 (디지털 콘텐츠)**
+
+- 결제 후 상세 리포트 **생성 시작 전** 취소 요청: 전액 환불을 원칙으로 합니다.
+- 상세 리포트가 생성되기 시작했거나 제공이 완료된 경우: 디지털 콘텐츠의 특성 및 관계 법령에 따라 청약철회가 제한될 수 있습니다.
+- 서비스 오류로 리포트가 생성되지 않거나 정상적으로 제공되지 않은 경우: 재제공 또는 환불을 요청할 수 있습니다.
+- 중복 결제·오결제 확인 시: 확인 후 해당 금액을 환불합니다.
+- 환불 문의: {CUSTOMER_SERVICE_PHONE} / {CUSTOMER_SERVICE_EMAIL}
+
+실제 결제 단계에서는 디지털 콘텐츠의 즉시 제공 및 청약철회 제한 가능성에 관한 동의 절차를 별도로 표시합니다.
+""")
+
+def render_business_footer():
+    st.markdown(
+        f"""
+        <div class="commerce-info">
+        <b>{BUSINESS_NAME}</b><br>
+        대표자: {REPRESENTATIVE_NAME} &nbsp;|&nbsp; 사업자등록번호: {BUSINESS_NUMBER}<br>
+        사업장 소재지: {BUSINESS_ADDRESS}<br>
+        고객센터: {CUSTOMER_SERVICE_PHONE} &nbsp;|&nbsp; 이메일: {CUSTOMER_SERVICE_EMAIL}<br>
+        통신판매업 신고번호: {ECOMMERCE_NUMBER}<br>
+        서비스: AI 정밀 사주 디지털 리포트 &nbsp;|&nbsp; 판매가: 4,900원 (부가세 포함)
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
 
 # ---------- UI ----------
 st.markdown("""
@@ -513,6 +742,41 @@ st.markdown("""
         border-color:#39332c !important;
     }
 
+    .commerce-info {
+        margin-top: 34px;
+        padding: 18px 20px;
+        border-top: 1px solid #3b342c;
+        color: #9f9386 !important;
+        font-size: .80rem;
+        line-height: 1.75;
+    }
+    .commerce-info b {
+        color: #c9b99f !important;
+    }
+    .product-card {
+        background: linear-gradient(145deg,#25211d,#191714);
+        border: 1px solid #514434;
+        border-radius: 16px;
+        padding: 22px 22px 18px 22px;
+        margin: 20px 0;
+        box-shadow: 0 12px 30px rgba(0,0,0,.18);
+    }
+    .product-card .price {
+        font-size: 1.45rem;
+        font-weight: 800;
+        color: #e0bd78 !important;
+        margin: 4px 0 10px 0;
+    }
+    .legal-summary {
+        background:#1d1a17;
+        border:1px solid #3f382f;
+        border-radius:12px;
+        padding:14px 16px;
+        margin:10px 0;
+        color:#c8bbac !important;
+        line-height:1.7;
+        font-size:.9rem;
+    }
     #MainMenu {visibility:hidden;}
     footer {visibility:hidden;}
     header {visibility:hidden;}
@@ -606,7 +870,8 @@ if st.session_state["page"] == "input":
         except Exception as e:
             st.error(f"오류가 발생했습니다: {e}")
 
-    st.caption("전통 명리학 기반 자기성찰·엔터테인먼트 콘텐츠")
+    render_product_and_policies()
+    render_business_footer()
 
 # ---------- PAGE 2 : RESULT ----------
 elif st.session_state["page"] == "result":
@@ -762,4 +1027,5 @@ elif st.session_state["page"] == "result":
             else:
                 st.markdown(st.session_state["premium_report"])
 
-    st.caption("전통 명리학 기반 자기성찰·엔터테인먼트 콘텐츠")
+    render_product_and_policies()
+    render_business_footer()
