@@ -272,39 +272,30 @@ def stream_premium_report(name, gender, saju_data, time_unknown=False):
 
 
 def render_product_and_policies():
-    """PG 심사에서 확인할 판매상품/약관/개인정보/환불정보."""
+    """고객 화면을 방해하지 않는 PG 심사용 최소 상품/정책 정보."""
     st.markdown("---")
-    st.markdown('<div class="section-kicker">SERVICE INFORMATION</div>', unsafe_allow_html=True)
-    st.markdown("## 판매 상품 안내")
-
     st.markdown(
         """
-        <div class="product-card">
-            <div style="font-size:1.15rem;font-weight:800;color:#f2e8d9;">AI 정밀 사주 · 나의 설계도</div>
-            <div class="price">4,900원 <span style="font-size:.82rem;color:#a99b8b;font-weight:500;">(부가세 포함)</span></div>
-            <div style="color:#c8bbac;line-height:1.75;">
-                출생정보를 바탕으로 전통 명리 데이터를 계산하고 AI가 현대적인 언어로 번역하는 개인 설계도형 디지털 리포트입니다.<br>
-                주요 구성: 사주 지문·반복 패턴·숨겨진 재능·직업/사업·돈·관계·성공 공식·나 사용설명서·인생 흐름(데이터 제공 시).<br>
-                <b style="color:#e4d3b7;">제공 시점:</b> 결제 확인 후 즉시 생성 시작, 통상 수분 이내 화면에서 제공됩니다.
-            </div>
+        <div style="text-align:center;color:#8f8376;font-size:.78rem;margin:4px 0 10px 0;">
+        AI 정밀 사주 · 개인 설계도 &nbsp;|&nbsp; 4,900원 &nbsp;|&nbsp; 결제 확인 후 즉시 생성
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    st.markdown("### 이용 및 결제 전 안내")
-    st.markdown(
-        """
-        <div class="legal-summary">
-        본 서비스는 전통 명리학을 AI가 해석하는 자기성찰·엔터테인먼트 목적의 디지털 콘텐츠입니다.
-        의료·법률·재정·투자 등 중요한 의사결정의 유일한 근거로 사용해서는 안 됩니다.
-        입력정보의 정확도에 따라 결과가 달라질 수 있으며, 출생시각 미상 시 시주 기반 해석은 제외됩니다.
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    with st.expander("서비스·이용안내", expanded=False):
+        st.markdown("""
+**AI 정밀 사주 · 개인 설계도 — 4,900원 (부가세 포함)**
 
-    with st.expander("이용약관"):
+출생정보를 바탕으로 전통 명리 데이터를 계산하고 AI가 현대적인 언어로 번역하는 디지털 리포트입니다.  
+주요 구성은 사주 지문, 반복 패턴, 숨겨진 재능, 직업·사업, 돈, 관계, 성공 공식, 나 사용설명서, 인생 흐름(관련 데이터 제공 시)입니다.
+
+**제공 시점:** 결제 확인 후 즉시 생성이 시작되며 통상 수분 이내 화면에서 제공됩니다.
+
+본 서비스는 전통 명리학을 AI가 해석하는 자기성찰·엔터테인먼트 목적의 디지털 콘텐츠입니다. 의료·법률·재정·투자 등 중요한 의사결정의 유일한 근거로 사용해서는 안 됩니다. 출생시각 미상 시 시주 기반 해석은 제외됩니다.
+""")
+
+    with st.expander("이용약관", expanded=False):
         st.markdown(f"""
 **제1조 목적**  
 본 약관은 {BUSINESS_NAME}(이하 "회사")가 제공하는 AI 정밀 사주 및 관련 디지털 서비스의 이용조건을 정합니다.
@@ -328,7 +319,7 @@ def render_product_and_policies():
 고객문의: {CUSTOMER_SERVICE_PHONE} / {CUSTOMER_SERVICE_EMAIL}
 """)
 
-    with st.expander("개인정보처리방침"):
+    with st.expander("개인정보처리방침", expanded=False):
         st.markdown(f"""
 **1. 수집 항목**  
 서비스 이용 과정에서 이름, 생년월일, 출생시각(선택), 성별과 서비스 이용·결제에 필요한 최소 정보가 처리될 수 있습니다.
@@ -347,15 +338,13 @@ def render_product_and_policies():
 
 **6. 개인정보 문의**  
 {CUSTOMER_SERVICE_EMAIL} / {CUSTOMER_SERVICE_PHONE}
-
-※ 실제 운영 전 외부 API의 개인정보 처리·국외이전 조건과 결제대행사 처리사항을 확인하여 본 방침을 최종 보완합니다.
 """)
 
-    with st.expander("취소·환불 정책"):
+    with st.expander("취소·환불 정책", expanded=False):
         st.markdown(f"""
-**AI 정밀 사주 전체 리포트 (디지털 콘텐츠)**
+**AI 정밀 사주 · 개인 설계도 (디지털 콘텐츠)**
 
-- 결제 후 상세 리포트 **생성 시작 전** 취소 요청: 전액 환불을 원칙으로 합니다.
+- 결제 후 상세 리포트 생성 시작 전 취소 요청: 전액 환불을 원칙으로 합니다.
 - 상세 리포트가 생성되기 시작했거나 제공이 완료된 경우: 디지털 콘텐츠의 특성 및 관계 법령에 따라 청약철회가 제한될 수 있습니다.
 - 서비스 오류로 리포트가 생성되지 않거나 정상적으로 제공되지 않은 경우: 재제공 또는 환불을 요청할 수 있습니다.
 - 중복 결제·오결제 확인 시: 확인 후 해당 금액을 환불합니다.
@@ -367,18 +356,15 @@ def render_product_and_policies():
 def render_business_footer():
     st.markdown(
         f"""
-        <div class="commerce-info">
-        <b>{BUSINESS_NAME}</b><br>
-        대표자: {REPRESENTATIVE_NAME} &nbsp;|&nbsp; 사업자등록번호: {BUSINESS_NUMBER}<br>
-        사업장 소재지: {BUSINESS_ADDRESS}<br>
-        고객센터: {CUSTOMER_SERVICE_PHONE} &nbsp;|&nbsp; 이메일: {CUSTOMER_SERVICE_EMAIL}<br>
-        통신판매업 신고번호: {ECOMMERCE_NUMBER}<br>
-        서비스: AI 정밀 사주 · 개인 설계도 디지털 리포트 &nbsp;|&nbsp; 판매가: 4,900원 (부가세 포함)
+        <div class="commerce-info" style="text-align:center;font-size:.72rem;line-height:1.65;opacity:.82;">
+        <b>{BUSINESS_NAME}</b> &nbsp;|&nbsp; 대표자 {REPRESENTATIVE_NAME} &nbsp;|&nbsp; 사업자등록번호 {BUSINESS_NUMBER}<br>
+        사업장 소재지 {BUSINESS_ADDRESS}<br>
+        고객센터 {CUSTOMER_SERVICE_PHONE} &nbsp;|&nbsp; {CUSTOMER_SERVICE_EMAIL}<br>
+        통신판매업 신고번호 {ECOMMERCE_NUMBER}
         </div>
         """,
         unsafe_allow_html=True
     )
-
 
 # ---------- UI ----------
 
