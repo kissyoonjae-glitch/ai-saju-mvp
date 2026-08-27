@@ -66,7 +66,7 @@ def generate_preview(name, gender, saju_data, time_unknown=False):
     client = OpenAI(api_key=OPENAI_API_KEY)
 
     prompt = f"""
-너는 전통 명리 데이터를 바탕으로 '결제 전 무료 사주'를 작성하는 프리미엄 명리 에디터다.
+너는 전통 명리 데이터를 현대적인 '개인 설계도'로 번역하는 프리미엄 명리 에디터다.
 
 이름: {name}
 성별: {gender}
@@ -75,63 +75,80 @@ def generate_preview(name, gender, saju_data, time_unknown=False):
 사주 원자료:
 {json.dumps(saju_data, ensure_ascii=False, indent=2)}
 
-[목표]
-무료 결과를 많이 주는 것이 목적이 아니다.
-독자가 30~60초 동안 읽으며 "이런 부분까지 읽는다고?"라는 적중감과 호기심을 느끼게 한다.
-그 뒤 더 깊은 직업·사업·돈·관계·인생 흐름을 알고 싶게 만든다.
+[서비스 콘셉트]
+운세를 맞히는 서비스가 아니라 '나를 사용하는 방법을 알려주는 사주'다.
+무료 결과는 아래 흐름으로 구성한다.
+1) 나의 사주 지문
+2) 반복되기 쉬운 인생/행동 패턴
+3) 숨겨진 재능 1개
+4) 성공 스타일 맛보기
+5) 유료 리포트에서 무엇을 더 알 수 있는지
 
 [절대 원칙]
 - 제공된 사주 데이터에 없는 내용은 만들지 않는다.
-- 출생시각 미상이면 시주를 전제로 한 해석을 하지 않는다.
-- API/JSON 내부 필드명은 절대 노출하지 않는다.
-- 누구에게나 맞을 법한 일반론은 피한다.
-- 성공, 부, 결혼, 사건 등을 확정적으로 예언하지 않는다.
-- 공포심을 이용해 결제를 유도하지 않는다.
-- "당신은 특별하다" 같은 빈 칭찬보다 실제 패턴을 말한다.
-- 전문용어는 최소화하고 필요하면 쉬운 말로 풀어쓴다.
-- 무료 결과에서 유명인 이름은 공개하지 않는다.
+- 출생시각 미상이면 시주 기반 해석을 하지 않는다.
+- API/JSON 내부 필드명은 노출하지 않는다.
+- '사주의 모순', '내적 모순', '충돌하는 두 성향' 같은 코너는 만들지 않는다.
+- 누구에게나 맞을 일반론, 빈 칭찬, 공포 마케팅을 피한다.
+- 성공·부·결혼·사건을 확정적으로 예언하지 않는다.
+- 전문용어는 최소화하고 쉬운 현대어로 번역한다.
+- 유명인의 실제 사주와 같다고 주장하지 않는다.
+- 수치 점수는 실제 통계처럼 위장하지 않는다. 아래 fingerprint_scores는 '해석용 지표'이며 사주 원자료의 상대적 특징을 근거로 0~100 사이 정수로 산정한다.
+- 근거가 약한 항목은 중간값에 가깝게 두고 과장하지 않는다.
+- 희귀도, 상위 몇 %, 유사도 %는 실제 비교 DB가 없으므로 절대 만들지 않는다.
 
-[무엇을 우선 찾아야 하는가]
-전체 데이터 중 가장 구체적이고 개인적으로 느껴질 특징을 찾는다.
-특히 다음이 실제 데이터에 있으면 우선 검토한다:
-- 서로 충돌하는 두 성향
-- 오행의 뚜렷한 과다/부족
-- 강하게 드러나는 십성 조합
-- 신강/신약
-- 합·충·형·파·해
-- 격국/용신
-- 반복될 가능성이 있는 행동 패턴
+[사주 지문 점수]
+아래 5개 축을 원자료에 근거해 산정한다.
+- 추진력: 행동 시작·밀어붙임과 관련된 명리 신호
+- 독립성: 자기주도·자기결정 성향
+- 현실감각: 실리·관리·구체화 성향
+- 변화성: 변화·확장·새 환경에 반응하는 성향
+- 관계지향: 사람·협업·관계에 에너지를 쓰는 정도
+각 점수마다 독자에게는 긴 근거를 쓰지 말고 짧은 설명만 준다.
 
 [출력]
 반드시 아래 JSON 형식만 출력한다.
 
 {{
-  "opening_title": "이 사주에서 가장 먼저 눈에 들어오는 특징을 한 문장으로. 평범한 칭찬 금지.",
-  "opening_body": "왜 그렇게 읽히는지와 현실에서 나타날 수 있는 모습을 2개의 짧은 문단으로.",
-  "hit_patterns": [
-    "구체적인 생활/행동 패턴 1",
-    "구체적인 생활/행동 패턴 2",
-    "구체적인 생활/행동 패턴 3"
-  ],
-  "contradiction_title": "이 사주에서 발견되는 흥미로운 모순을 짧게 표현",
-  "contradiction_body": "서로 다른 두 힘이 어떻게 동시에 나타날 수 있는지 1~2문단으로 설명",
-  "character_name": "현대적인 사주 캐릭터명",
-  "character_teaser": "이 캐릭터의 핵심을 기억에 남는 한두 문장으로 설명",
-  "locked_hooks": [
+  "fingerprint_type": "개척형 × 전략형 × 확장형처럼 2~3개의 현대적 유형 조합",
+  "fingerprint_line": "이 사람의 작동방식을 압축한 기억에 남는 한 문장",
+  "fingerprint_scores": {{
+    "추진력": 0,
+    "독립성": 0,
+    "현실감각": 0,
+    "변화성": 0,
+    "관계지향": 0
+  }},
+  "fingerprint_note": "점수 전체를 연결해 2~3문장으로 설명",
+  "repeat_patterns": [
     {{
-      "title": "돈/재물에서 실제 데이터로 더 깊게 풀 수 있는 궁금증",
-      "teaser": "정답을 다 말하지 않고 왜 더 볼 가치가 있는지 한 문장"
+      "title": "반복 패턴 1의 짧은 제목",
+      "body": "현실에서 어떻게 나타날 수 있는지 구체적으로"
     }},
     {{
-      "title": "직업/사업에서 실제 데이터로 더 깊게 풀 수 있는 궁금증",
-      "teaser": "정답을 다 말하지 않고 왜 더 볼 가치가 있는지 한 문장"
-    }},
-    {{
-      "title": "관계 또는 인생 흐름에서 실제 데이터로 더 깊게 풀 수 있는 궁금증",
-      "teaser": "정답을 다 말하지 않고 왜 더 볼 가치가 있는지 한 문장"
+      "title": "반복 패턴 2의 짧은 제목",
+      "body": "현실에서 어떻게 나타날 수 있는지 구체적으로"
     }}
   ],
-  "closing_hook": "무료 해석에서 드러난 특징을 바탕으로, 정밀 사주가 무엇을 더 연결해서 보여주는지 한 문장"
+  "hidden_talent": {{
+    "title": "과소평가하기 쉬운 재능 하나",
+    "body": "왜 이것이 재능으로 읽히고 현실에서 어떻게 나타나는지 2~3문장"
+  }},
+  "success_style": {{
+    "name": "개척자형/축적가형/조율가형/장인형/전략가형 등",
+    "body": "이 사람이 성과를 만들기 쉬운 방식에 대한 2~3문장"
+  }},
+  "locked_hooks": [
+    "숨겨진 재능 4가지",
+    "돈이 움직이는 방식",
+    "직업·사업 적성",
+    "관계에서 힘이 살아나는 방식",
+    "인생 흐름과 주목할 시기",
+    "나 사용설명서",
+    "내 성공 공식",
+    "내 사주에게 질문하기"
+  ],
+  "closing_hook": "무료 분석에서 확인한 작동방식을 유료 리포트에서 어떻게 현실 전략으로 연결하는지 한 문장"
 }}
 """
     response = client.responses.create(model="gpt-5-mini", input=prompt)
@@ -141,165 +158,114 @@ def stream_premium_report(name, gender, saju_data, time_unknown=False):
     client = OpenAI(api_key=OPENAI_API_KEY)
 
     prompt = f"""
-너는 'API 분석 결과를 나열하는 AI'가 아니라, 한 사람의 사주를 깊고 매력적으로 읽어주는 프리미엄 명리 에디터다.
+너는 사주를 운세 문장으로 나열하는 AI가 아니라, 전통 명리 데이터를 현대적인 '개인 사용설명서'로 번역하는 프리미엄 명리 에디터다.
 
 이름: {name}
 성별: {gender}
+출생시각 미상 여부: {time_unknown}
 
-아래 JSON은 SAZU 만세력 API가 계산한 원자료다.
+사주 원자료:
 {json.dumps(saju_data, ensure_ascii=False, indent=2)}
 
+[핵심 콘셉트]
+"운세를 알려주는 사주가 아니라, 나를 사용하는 방법을 알려주는 사주."
+
 [절대 원칙]
-0. 출생시각 미상 여부: {time_unknown}
-   - 출생시각 미상(True)이면 시주를 전제로 한 해석을 절대 하지 않는다.
-   - 시주, 시주 기반 십성, 말년운, 자녀운 등 출생시각 의존 해석은 "출생시각 미상으로 제외"라고 처리한다.
-   - 다른 연·월·일주 기반 해석은 가능한 범위에서 계속한다.
-1. 제공된 데이터에 없는 명리 정보는 만들지 않는다.
-2. JSON/API 내부 필드명은 독자에게 절대 노출하지 않는다.
-   예: sinStrength, twelveFortune, negativeSpirits, summary.conflict, harmony, elements 같은 개발자용 표현을 본문에 쓰지 않는다.
-3. "근거:", "해석:", "현실:"을 반복하는 보고서 형식을 쓰지 않는다.
-4. 명리 근거는 자연스러운 한국어로 녹인다.
-   예: "비견과 식신의 기운이 함께 드러나기 때문에..."처럼 쓴다.
-5. 모든 문장을 칭찬으로 만들지 않는다. 강점과 함께 실제로 발목을 잡을 수 있는 패턴도 구체적으로 말한다.
-6. 겁을 주거나 불행·질병·사고·파산·이혼 등을 확정적으로 예언하지 않는다.
-7. 대운·세운 등 시기 데이터가 없으면 시기를 만들어내지 않는다.
-8. 의료·법률·투자 판단을 사주로 지시하지 않는다.
-9. 전문용어는 최소화하고, 사용하면 즉시 쉬운 말로 풀어쓴다.
-10. 같은 말을 표현만 바꿔 반복하지 않는다.
-11. 독자가 "나에 관한 짧은 책"을 읽는 느낌이 들도록 자연스럽고 밀도 있게 쓴다.
-12. 전체 분량보다 통찰의 밀도를 우선한다.
+- 제공된 데이터에 없는 명리 정보나 시기를 만들지 않는다.
+- 출생시각 미상이면 시주 기반 해석은 제외한다.
+- API/JSON 내부 필드명은 노출하지 않는다.
+- '사주의 모순', '숨은 긴장', '충돌하는 두 힘'을 별도 코너로 만들지 않는다.
+- 좋은 말만 늘어놓지 말되, 약점은 현실적인 주의점/습관으로 설명한다.
+- 성공·부·결혼·사건을 확정적으로 예언하지 않는다.
+- 의료·법률·투자 판단을 사주로 지시하지 않는다.
+- 희귀도, 상위 %, 유명인 유사도 %는 실제 비교 DB가 없으므로 만들지 않는다.
+- 유명인은 실제 사주가 같다는 뜻으로 쓰지 않는다. 꼭 도움이 될 때만 '행동 스타일을 설명하기 위한 비유'로 최대 1명 사용한다.
+- 같은 내용을 표현만 바꿔 반복하지 않는다.
+- 독자가 '나에 관한 짧은 책 + 현실 사용설명서'를 읽는 느낌이 들게 쓴다.
 
 [문체]
-- 한국어 에세이 + 프리미엄 사주 리포트의 중간.
-- 짧은 문장과 긴 문장을 섞는다.
-- 항목마다 똑같은 불릿 구조를 반복하지 않는다.
-- 중요한 문장은 **굵게** 강조할 수 있다.
-- 독자에게 직접 "당신"이라고 말해도 좋다.
-- 과도한 감탄사, 이모지 남발, 싸구려 운세 광고 문체는 금지.
-- "성공할 운명", "큰 부자가 된다", "반드시 사업해야 한다" 같은 단정은 금지.
-- 명리 근거는 신뢰를 위해 쓰되 본문 전체의 약 20~30% 정도만 차지하게 한다.
+한국어 에세이와 프리미엄 리포트의 중간. 전문용어는 필요한 만큼만 쓰고 바로 풀어쓴다.
+구체적인 행동·환경·선택의 언어를 사용한다.
 
-[유명인/캐릭터 비유 규칙]
-- 먼저 이 사주의 현대적 캐릭터명을 하나 만든다.
-  예: 판을 만드는 개척자, 오래 쌓는 축적가, 사람을 읽는 조율가, 깊게 파는 장인, 기회를 포착하는 전략가.
-- 데이터가 충분히 뒷받침할 때만 유명인의 '행동 스타일'을 최대 1~2명 비유로 사용한다.
-- "같은 사주", "같은 운명", "그 사람처럼 성공한다"고 말하지 않는다.
-- 유명인의 실제 명식이나 출생시각을 알고 있다고 가정하지 않는다.
-- 반드시 "같은 사주라는 뜻이 아니라, 이해를 돕기 위한 현대적 캐릭터 비유"라는 취지를 자연스럽게 밝힌다.
-- 억지 비유라면 유명인 이름을 쓰지 않는다.
+다음 구조를 반드시 따른다.
 
-[각 장의 작성법]
-각 장은 아래 리듬을 권장한다.
-A. 먼저 독자의 시선을 잡는 구체적인 제목/한 문장
-B. 왜 그렇게 읽히는지 명리 근거를 자연스럽게 설명
-C. 실제 생활에서 나타날 수 있는 모습을 구체적으로 묘사
-D. 그 성향의 장점
-E. 동시에 그 성향이 지나치면 생기는 함정
-필요할 때만 불릿을 사용한다.
+# {name}님의 AI 정밀 사주
 
-다음 순서로 작성하라.
+## 1. 나의 사주 지문
+2~3개의 현대적 유형 조합으로 이름을 붙이고 핵심 작동방식을 설명한다.
+추진력·독립성·현실감각·변화성·관계지향을 원자료에 근거한 '해석용 지표'로 설명하되, 통계나 과학적 성격검사처럼 과장하지 않는다.
 
-# {name}님의 정밀 사주
+## 2. 내가 반복하기 쉬운 인생 패턴
+데이터에서 근거가 강한 패턴 3~5개를 뽑는다.
+각 패턴은 '언제 나타나는지 → 현실에서 어떤 모습인지 → 어떻게 활용하거나 조절할지'까지 연결한다.
 
-## 1. 먼저, 이 사주를 한 문장으로 읽으면
-사주의 핵심을 3~5문장으로 압축한다.
-첫 문장은 평범한 성격 설명이 아니라 기억에 남는 문장으로 쓴다.
+## 3. 내가 과소평가하기 쉬운 재능
+숨겨진 재능을 3~5개 선정한다.
+재능 이름만 나열하지 말고 왜 본인은 평범하게 여길 수 있는지, 어떤 환경에서 가치가 생기는지 설명한다.
 
-## 2. 당신의 사주 캐릭터
-### 캐릭터 이름
-캐릭터명을 제시하고 왜 그렇게 읽었는지 설명한다.
-적절한 경우 현대적 유명인의 사고방식/일하는 방식에 비유한다.
-비유 뒤에는 같은 사주라는 의미가 아님을 자연스럽게 설명한다.
+## 4. 일 — 어디에서 힘이 살아나는가
+조직/독립, 기획/실행, 안정/변화, 혼자/협업 등을 연결한다.
+### 잘 맞는 일의 조건
+### 오래 버티기 어려울 수 있는 환경
+### 직업 선택에서 기억할 한 문장
 
-## 3. 나라는 사람
-"성격이 좋다/나쁘다"가 아니라 이 사람이 실제로 어떤 방식으로 움직이는지 쓴다.
-겉과 속의 차이, 결정 방식, 사람을 대하는 태도, 몰입 방식 등을 연결한다.
-
-### 당신에게 꽤 강하게 보이는 장점
-가장 중요한 3가지만 깊게 설명한다.
-
-### 반대로, 스스로 발목을 잡기 쉬운 지점
-좋은 말로 포장하지 말고 데이터가 뒷받침하는 약점/반복 패턴 2~4개를 구체적으로 설명한다.
-
-### 스트레스가 쌓이면
-평소와 달리 어떤 패턴이 나타날 수 있는지 설명한다.
-
-## 4. 일 — 당신은 어디에서 힘이 살아나는가
-"무슨 직업이 좋다"는 단순 추천보다 일하는 방식부터 분석한다.
-조직/독립, 리더/실무, 기획/실행, 안정/변화, 혼자/협업을 연결해 설명한다.
-
-### 잘 맞을 가능성이 높은 일의 조건
-구체적인 환경/역할 3~5개.
-
-### 오래 버티기 힘들 수 있는 환경
-왜 힘든지까지 설명한다.
-
-### 직업 선택에서 가장 중요한 한 가지
-마지막에 한 문장으로 정리한다.
-
-## 5. 사업 — 판을 만들 사람인가, 판 안에서 강한 사람인가
+## 5. 사업 — 사업가인가보다 '어떻게 판을 다루는가'
 사업 성향이 실제 데이터에서 읽히는 범위만 해석한다.
-창업/독립성, 리더십, 동업, 실행력, 위험 감수, 마무리 능력을 종합한다.
-사업을 해야 한다고 단정하지 않는다.
+### 사업에서 강한 무기
+### 사업에서 경계할 습관
+### 혼자/동업/조직 중 어떤 구조가 편한가
 
-### 사업을 한다면 가장 강한 무기
-### 사업을 한다면 가장 위험한 습관
-
-## 6. 돈 — 버는 힘과 지키는 힘은 다를 수 있다
-재성/십성/원국/대운 등 실제 데이터가 있을 때만 활용한다.
-돈을 벌 기회에 반응하는 방식, 축적 방식, 소비/리스크 성향을 자연스럽게 풀어쓴다.
-투자상품 추천은 하지 않는다.
-
+## 6. 돈 — 나에게 돈이 움직이는 방식
+돈을 버는 방식, 지키는 방식, 기회에 반응하는 방식, 리스크 습관을 데이터 범위 안에서 설명한다.
+투자상품은 추천하지 않는다.
 ### 돈에서 반복하지 말아야 할 패턴
-구체적으로 정리한다.
 
-## 7. 관계 — 가까워질수록 드러나는 모습
-연애만 따로 떼지 말고 인간관계의 기본 패턴부터 설명한다.
-신뢰 형성, 거리감, 갈등, 표현 방식, 가까운 관계에서의 모습을 연결한다.
+## 7. 관계 — 어떤 거리에서 가장 편안한가
+신뢰 형성, 표현, 갈등, 친밀감, 협업을 설명한다.
+### 연애
+### 친구와 동료
+### 관계에서 기억할 한 가지
 
-### 연애에서는
-### 친구와 동료 사이에서는
-### 관계에서 가장 조심할 패턴
+## 8. 나의 성공 공식
+이 사주의 강점을 현실에서 성과로 연결하는 3~5개의 요소를 하나의 공식처럼 표현한다.
+예: 호기심 × 자율성 × 빠른 실행 × 반복 개선.
+이어 '성과를 막기 쉬운 조건'도 구체적으로 설명한다.
 
-## 8. 당신 사주의 숨은 긴장
-합·충·형·파·해, 오행 불균형, 신강/신약, 용신/기신 등 실제 데이터가 있다면
-서로 충돌하는 두 성향이나 내적 긴장을 하나의 이야기로 설명한다.
-예: "앞으로 나가고 싶은 힘과 안전하게 지키고 싶은 힘이 동시에 있다."
-이 장은 특히 개인적인 통찰처럼 느껴지게 작성한다.
+## 9. 나 사용설명서
+이 리포트의 핵심 장이다.
+### 최상의 환경
+### 피해야 할 환경
+### 일하는 방식
+### 돈을 다루는 방식
+### 사람을 대하는 방식
+### 슬럼프 복구 순서
+### 중요한 결정을 내릴 때
+각 항목을 매우 실용적으로 작성한다.
 
-## 9. 인생의 흐름
-대운/세운 데이터가 실제 제공된 경우에만 작성한다.
-연도와 시기를 정확히 데이터에 근거해 설명하고 사건을 확정적으로 예언하지 않는다.
-데이터가 충분하지 않다면 솔직하게 구체적 시기 해석을 생략한다.
+## 10. 인생 흐름
+대운/세운 등 실제 시기 데이터가 있을 때만 작성한다.
+가능하면 확장기/정비기/전환기/수확기 같은 쉬운 언어로 번역한다.
+구체적 사건은 예언하지 않는다.
+데이터가 없으면 '구체적 시기 데이터가 없어 생략한다'고 짧게 밝힌다.
 
-### 지금의 흐름
-### 다음 흐름에서 달라질 수 있는 것
-### 주목해서 볼 시기
-데이터가 있을 때만 작성.
+## 11. 당신과 가까운 성공 스타일
+개척자형·축적가형·조율가형·장인형·전략가형 등으로 정리한다.
+유명인 비유가 정말 적절할 때만 최대 1명을 행동 스타일의 예시로 사용하고, 같은 사주라는 뜻이 아님을 명시한다.
 
-## 10. 결국 이 사주를 어떻게 써야 하는가
-앞의 내용을 다시 요약하지 말고 하나의 결론을 낸다.
+## 12. 결국, 나를 어떻게 써야 하는가
+앞 내용을 단순 요약하지 말고 가장 중요한 현실 전략을 3~5개로 압축한다.
+마지막 문장은 독자가 기억할 만한 문장으로 끝낸다.
 
-### 가장 잘 활용해야 할 세 가지
-각각 한두 문장.
+## 13. 내 사주에게 물어볼 질문
+이 리포트를 읽은 사람이 다음으로 궁금해할 개인화 질문 4개를 제안한다.
+예: 직장과 사업 중 어떤 환경에서 강점이 더 살아나는가?
+실제 채팅 기능이 연결되기 전까지는 '추천 질문'만 제시한다.
 
-### 가장 경계해야 할 세 가지
-각각 한두 문장.
-
-### 당신에게 필요한 방향
-마지막 2~4문단은 독자가 리포트를 덮고도 기억할 만한 내용으로 쓴다.
-운명을 단정하지 말고 "이 사주의 장점을 현실에서 어떻게 사용할 것인가"에 집중한다.
-
-마지막에 작은 글씨 느낌의 문장으로:
+마지막에:
 "이 리포트는 전통 명리학 데이터를 AI가 현대적인 언어로 해석한 자기성찰·엔터테인먼트 콘텐츠입니다. 중요한 삶의 결정은 현실의 정보와 판단을 함께 고려하세요."
 """
 
-    stream = client.responses.create(
-        model="gpt-5-mini",
-        input=prompt,
-        stream=True,
-    )
-
+    stream = client.responses.create(model="gpt-5-mini", input=prompt, stream=True)
     for event in stream:
         if getattr(event, "type", None) == "response.output_text.delta":
             yield event.delta
@@ -314,11 +280,11 @@ def render_product_and_policies():
     st.markdown(
         """
         <div class="product-card">
-            <div style="font-size:1.15rem;font-weight:800;color:#f2e8d9;">AI 정밀 사주 전체 리포트</div>
+            <div style="font-size:1.15rem;font-weight:800;color:#f2e8d9;">AI 정밀 사주 · 나의 설계도</div>
             <div class="price">4,900원 <span style="font-size:.82rem;color:#a99b8b;font-weight:500;">(부가세 포함)</span></div>
             <div style="color:#c8bbac;line-height:1.75;">
-                출생정보를 바탕으로 전통 명리 데이터를 계산하고 AI가 현대적인 언어로 해석하는 디지털 리포트입니다.<br>
-                주요 구성: 기질·강점·반복 패턴·직업/사업·재물·관계·대운/세운(데이터 제공 시)·종합 방향.<br>
+                출생정보를 바탕으로 전통 명리 데이터를 계산하고 AI가 현대적인 언어로 번역하는 개인 설계도형 디지털 리포트입니다.<br>
+                주요 구성: 사주 지문·반복 패턴·숨겨진 재능·직업/사업·돈·관계·성공 공식·나 사용설명서·인생 흐름(데이터 제공 시).<br>
                 <b style="color:#e4d3b7;">제공 시점:</b> 결제 확인 후 즉시 생성 시작, 통상 수분 이내 화면에서 제공됩니다.
             </div>
         </div>
@@ -407,7 +373,7 @@ def render_business_footer():
         사업장 소재지: {BUSINESS_ADDRESS}<br>
         고객센터: {CUSTOMER_SERVICE_PHONE} &nbsp;|&nbsp; 이메일: {CUSTOMER_SERVICE_EMAIL}<br>
         통신판매업 신고번호: {ECOMMERCE_NUMBER}<br>
-        서비스: AI 정밀 사주 디지털 리포트 &nbsp;|&nbsp; 판매가: 4,900원 (부가세 포함)
+        서비스: AI 정밀 사주 · 개인 설계도 디지털 리포트 &nbsp;|&nbsp; 판매가: 4,900원 (부가세 포함)
         </div>
         """,
         unsafe_allow_html=True
@@ -426,11 +392,11 @@ def render_product_and_policies():
     st.markdown(
         """
         <div class="product-card">
-            <div style="font-size:1.15rem;font-weight:800;color:#f2e8d9;">AI 정밀 사주 전체 리포트</div>
+            <div style="font-size:1.15rem;font-weight:800;color:#f2e8d9;">AI 정밀 사주 · 나의 설계도</div>
             <div class="price">4,900원 <span style="font-size:.82rem;color:#a99b8b;font-weight:500;">(부가세 포함)</span></div>
             <div style="color:#c8bbac;line-height:1.75;">
-                출생정보를 바탕으로 전통 명리 데이터를 계산하고 AI가 현대적인 언어로 해석하는 디지털 리포트입니다.<br>
-                주요 구성: 기질·강점·반복 패턴·직업/사업·재물·관계·대운/세운(데이터 제공 시)·종합 방향.<br>
+                출생정보를 바탕으로 전통 명리 데이터를 계산하고 AI가 현대적인 언어로 번역하는 개인 설계도형 디지털 리포트입니다.<br>
+                주요 구성: 사주 지문·반복 패턴·숨겨진 재능·직업/사업·돈·관계·성공 공식·나 사용설명서·인생 흐름(데이터 제공 시).<br>
                 <b style="color:#e4d3b7;">제공 시점:</b> 결제 확인 후 즉시 생성 시작, 통상 수분 이내 화면에서 제공됩니다.
             </div>
         </div>
@@ -519,7 +485,7 @@ def render_business_footer():
         사업장 소재지: {BUSINESS_ADDRESS}<br>
         고객센터: {CUSTOMER_SERVICE_PHONE} &nbsp;|&nbsp; 이메일: {CUSTOMER_SERVICE_EMAIL}<br>
         통신판매업 신고번호: {ECOMMERCE_NUMBER}<br>
-        서비스: AI 정밀 사주 디지털 리포트 &nbsp;|&nbsp; 판매가: 4,900원 (부가세 포함)
+        서비스: AI 정밀 사주 · 개인 설계도 디지털 리포트 &nbsp;|&nbsp; 판매가: 4,900원 (부가세 포함)
         </div>
         """,
         unsafe_allow_html=True
@@ -894,91 +860,99 @@ elif st.session_state["page"] == "result":
     if time_unknown:
         st.info("출생시각 미상으로 시주 기반 해석은 제외하고 풀이했습니다.")
 
-    # 1. 첫 적중 포인트
+    # 1. 나의 사주 지문
     st.markdown('<div class="saju-card">', unsafe_allow_html=True)
-    st.markdown('<div class="section-kicker">FIRST IMPRESSION</div>', unsafe_allow_html=True)
-    st.markdown(f"## {preview.get('opening_title', '당신의 사주에서 먼저 보이는 것')}")
-    st.write(preview.get("opening_body", ""))
+    st.markdown('<div class="section-kicker">SAJU FINGERPRINT</div>', unsafe_allow_html=True)
+    st.markdown("## 나의 사주 지문")
+    st.markdown(f"### {preview.get('fingerprint_type', '나만의 작동 방식')}")
+    st.write(preview.get("fingerprint_line", ""))
+
+    scores = preview.get("fingerprint_scores", {})
+    if scores:
+        for label in ["추진력", "독립성", "현실감각", "변화성", "관계지향"]:
+            value = scores.get(label)
+            if isinstance(value, (int, float)):
+                value = max(0, min(100, int(value)))
+                st.markdown(f"**{label} · {value}**")
+                st.progress(value)
+        st.caption("※ 위 수치는 사주 원자료의 상대적 특징을 현대적으로 번역한 해석용 지표이며, 통계적 성격검사 점수가 아닙니다.")
+    st.write(preview.get("fingerprint_note", ""))
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # 2. 생활 패턴 체크
-    patterns = preview.get("hit_patterns", [])
+    # 2. 반복 패턴
+    patterns = preview.get("repeat_patterns", [])
     if patterns:
-        st.markdown("## 혹시 이런 적 있나요?")
-        st.caption("사주 구조에서 비교적 선명하게 읽히는 생활 패턴입니다.")
-        for p in patterns:
+        st.markdown('<div class="section-kicker">REPEATING PATTERNS</div>', unsafe_allow_html=True)
+        st.markdown("## 내게 반복되기 쉬운 패턴")
+        for i, item in enumerate(patterns[:2], 1):
+            title = item.get("title", "") if isinstance(item, dict) else str(item)
+            body = item.get("body", "") if isinstance(item, dict) else ""
             st.markdown(
                 f'<div class="locked-box" style="border-left:3px solid #c6a15b;">'
-                f'<span style="color:#c6a15b;font-weight:800;">✓</span> '
-                f'<span style="color:#efe6d8;">{p}</span></div>',
+                f'<b style="color:#e0bd78;">{i}. {title}</b><br>'
+                f'<span style="color:#d4c8b9;">{body}</span></div>',
                 unsafe_allow_html=True
             )
 
-    # 3. 사주의 모순
-    contradiction_title = preview.get("contradiction_title", "")
-    contradiction_body = preview.get("contradiction_body", "")
-    if contradiction_title:
+    # 3. 숨겨진 재능 맛보기
+    talent = preview.get("hidden_talent", {})
+    if isinstance(talent, dict) and talent.get("title"):
         st.markdown('<div class="saju-card">', unsafe_allow_html=True)
-        st.markdown('<div class="section-kicker">HIDDEN CONTRADICTION</div>', unsafe_allow_html=True)
-        st.markdown("## 그런데, 이 사주에는 재미있는 모순이 있습니다")
-        st.markdown(f"### {contradiction_title}")
-        st.write(contradiction_body)
+        st.markdown('<div class="section-kicker">HIDDEN TALENT</div>', unsafe_allow_html=True)
+        st.markdown("## 내가 과소평가하기 쉬운 재능")
+        st.markdown(f"### {talent.get('title')}")
+        st.write(talent.get("body", ""))
+        st.caption("정밀 사주에서는 데이터에서 읽히는 다른 재능들과, 각각 어떤 환경에서 가치가 커지는지까지 이어집니다.")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # 4. 캐릭터
-    character_name = preview.get("character_name", "")
-    character_teaser = preview.get("character_teaser", "")
-    if character_name:
+    # 4. 성공 스타일 맛보기
+    style = preview.get("success_style", {})
+    if isinstance(style, dict) and style.get("name"):
         st.markdown('<div class="saju-card">', unsafe_allow_html=True)
-        st.markdown('<div class="section-kicker">SAJU CHARACTER</div>', unsafe_allow_html=True)
-        st.markdown("## 당신의 사주 캐릭터")
-        st.markdown(f"### {character_name}")
-        st.write(character_teaser)
-        st.caption("정밀 사주에서는 이 캐릭터가 나온 명리 근거와, 적절한 경우 이해를 돕는 현대적 인물 비유까지 이어집니다.")
+        st.markdown('<div class="section-kicker">SUCCESS STYLE</div>', unsafe_allow_html=True)
+        st.markdown("## 나와 가까운 성공 스타일")
+        st.markdown(f"### {style.get('name')}")
+        st.write(style.get("body", ""))
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # 5. 잠금 훅
-    st.markdown('<div class="section-kicker">WHAT COMES NEXT</div>', unsafe_allow_html=True)
-    st.markdown("## 그런데 더 흥미로운 건 여기부터입니다")
-
-    hooks = preview.get("locked_hooks", [])
-    for h in hooks[:3]:
-        title = h.get("title", "") if isinstance(h, dict) else str(h)
-        teaser = h.get("teaser", "") if isinstance(h, dict) else ""
+    # 5. 잠금 영역
+    st.markdown('<div class="section-kicker">YOUR BLUEPRINT</div>', unsafe_allow_html=True)
+    st.markdown("## 여기서부터는 '운세'가 아니라 사용설명서입니다")
+    locked = preview.get("locked_hooks", [])
+    for title in locked[:8]:
         st.markdown(
-            f'<div class="locked-box">'
-            f'🔒 <b>{title}</b><br>'
-            f'<span style="color:#b9aa96;font-size:.92rem">{teaser}</span>'
-            f'</div>',
+            f'<div class="locked-box">🔒 <b>{title}</b></div>',
             unsafe_allow_html=True
         )
 
     if preview.get("closing_hook"):
         st.info(preview["closing_hook"])
 
-    # 6. 구매 가치 설명
+    # 6. 구매 가치
     st.markdown('<div class="saju-card">', unsafe_allow_html=True)
-    st.markdown('<div class="section-kicker">FULL READING</div>', unsafe_allow_html=True)
-    st.markdown("## 여기까지는 사주의 표면입니다.")
+    st.markdown('<div class="section-kicker">FULL BLUEPRINT</div>', unsafe_allow_html=True)
+    st.markdown("## 나를 사용하는 방법까지 알고 싶다면")
     st.write(
-        "정밀 사주에서는 단순히 항목을 늘리는 것이 아니라, "
-        "**왜 이런 패턴을 반복하는지, 어떤 방식으로 일할 때 힘이 살아나는지, "
-        "돈을 버는 힘과 지키는 힘은 어떻게 다른지, 가까운 관계에서는 무엇이 반복되는지, "
-        "그리고 실제 데이터가 있는 경우 현재와 다음 흐름에서 무엇이 달라지는지**를 하나로 연결해 풀이합니다."
+        "정밀 사주는 좋은 운·나쁜 운을 길게 나열하지 않습니다. "
+        "**내가 어떤 방식으로 움직이는지 → 어떤 재능을 놓치기 쉬운지 → "
+        "어디에서 일의 힘이 살아나는지 → 돈과 관계를 어떤 방식으로 다루는지 → "
+        "결국 나를 어떻게 써야 하는지**를 하나의 개인 설계도로 연결합니다."
     )
-
-    st.markdown("**정밀 사주에서 이어지는 내용**")
     st.markdown(
         """
-- 나의 사주 캐릭터와 그 명리적 근거
-- 나를 움직이게 하는 힘과 스스로 발목 잡는 패턴
-- 직업에서 힘이 살아나는 환경과 피해야 할 환경
-- 사업을 한다면 강한 무기와 위험한 습관
-- 돈을 버는 방식과 지키는 방식
-- 연애·친구·동료 관계에서 반복되는 패턴
-- 사주 안에서 충돌하는 두 힘과 숨은 긴장
-- 대운·세운 데이터가 있을 경우 현재와 다음 흐름
-- 결국 이 사주를 현실에서 어떻게 활용할 것인가
+**정밀 사주 전체 구성**
+- 전체 사주 지문과 해석
+- 반복되는 인생 패턴
+- 숨겨진 재능 3~5가지
+- 직업·사업에서 힘이 살아나는 조건
+- 나에게 돈이 움직이는 방식
+- 관계에서 편안한 거리와 주의점
+- **나의 성공 공식**
+- **나 사용설명서**
+- 대운·세운 데이터가 있을 경우 인생 흐름
+- 나와 가까운 성공 스타일
+- 결국 나를 어떻게 써야 하는가
+- 내 사주에게 물어볼 개인화 질문
         """
     )
     st.markdown('</div>', unsafe_allow_html=True)
@@ -986,17 +960,17 @@ elif st.session_state["page"] == "result":
     st.markdown(
         """
         <div class="price-box">
-            <h3>내 사주 전체 해석 열기 · 4,900원</h3>
-            <p>데이터를 나열하지 않고, 당신의 기질·일·돈·관계·흐름을 하나의 이야기처럼 연결해 풀어드립니다.</p>
+            <h3>나의 전체 설계도 열기 · 4,900원</h3>
+            <p>운세를 알려주는 사주가 아니라, 나를 사용하는 방법을 알려주는 사주.</p>
         </div>
         """,
         unsafe_allow_html=True
     )
 
     if PAYMENT_URL:
-        st.link_button("🔓 정밀 사주 전체 해석 열기", PAYMENT_URL, use_container_width=True)
+        st.link_button("🔓 AI 정밀 사주 전체 리포트 열기", PAYMENT_URL, use_container_width=True)
     else:
-        st.button("🔓 정밀 사주 전체 해석 열기", use_container_width=True, disabled=True)
+        st.button("🔓 AI 정밀 사주 전체 리포트 열기", use_container_width=True, disabled=True)
         st.caption("결제 링크 연결 전 테스트 버전입니다.")
 
     if TEST_MODE:
